@@ -1,0 +1,3240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timeline Projection — Historical Family Archive</title>
+  <meta name="description" content="Interactive historical archive and timeline projection with triple vertical scrolling, polytonic Greek transcription, and deep scan inspection.">
+  
+  <!-- Typography matching Archivesys Studio -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ========================================================================= */
+    /* Archivesys Archival Light Theme Tokens (Exact match with studio.css)      */
+    /* ========================================================================= */
+    :root {
+      --bg-main: #f7f6f3;
+      --bg-surface: #ffffff;
+      --bg-card: #ffffff;
+      --bg-card-subtle: #f1f0ec;
+      --bg-input: #ffffff;
+      --border-color: #e4e2dc;
+      --border-hover: #cbc8c0;
+      --border-focus: #2563eb;
+      --accent-gold: #b45309;
+      --accent-gold-subtle: #fef3c7;
+      --accent-blue: #2563eb;
+      --accent-blue-subtle: #eff6ff;
+      --accent-cyan: #0284c7;
+      --accent-green: #15803d;
+      --accent-green-subtle: #f0fdf4;
+      --accent-yellow: #d97706;
+      --accent-yellow-subtle: #fffbeb;
+      --accent-red: #dc2626;
+      --accent-red-subtle: #fef2f2;
+      --text-primary: #1a1a17;
+      --text-secondary: #4a4843;
+      --text-muted: #6f6c65;
+      --font-heading: 'Cinzel', serif;
+      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-archival: 'EB Garamond', Georgia, serif;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+      --shadow-pop: 0 20px 40px -10px rgba(26, 26, 23, 0.35);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Clean subtle scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d3d0c9; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #b0ada5; }
+
+    /* ========================================================================= */
+    /* Header Bar (Direct parity with Archivesys Studio Header)                  */
+    /* ========================================================================= */
+    .dashboard-header {
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 60px;
+      z-index: 30;
+      flex-shrink: 0;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-badge {
+      background: var(--accent-blue-subtle);
+      color: var(--accent-blue);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      border: 1px solid #bfdbfe;
+    }
+
+    .brand h1 {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      letter-spacing: 0.6px;
+      color: var(--text-primary);
+    }
+
+    .header-stats {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      background: var(--bg-card-subtle);
+      padding: 4px 14px;
+      border-radius: 9999px;
+      border: 1px solid var(--border-color);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-stats strong {
+      color: var(--accent-gold);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Search Box */
+    .search-box {
+      position: relative;
+    }
+
+    .search-input {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-primary);
+      padding: 6px 30px 6px 32px;
+      font-size: 0.82rem;
+      width: 250px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+      width: 290px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .search-clear-btn {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.8rem;
+      display: none;
+    }
+
+    .search-clear-btn:hover { color: var(--text-primary); }
+
+    /* Filter Selects */
+    .select-styled {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-primary);
+      padding: 5px 10px;
+      font-size: 0.8rem;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .select-styled:focus {
+      border-color: var(--accent-blue);
+    }
+
+    /* Vault Connector Widget */
+    .vault-widget {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-color);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+    }
+
+    .vault-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-yellow);
+      display: inline-block;
+      box-shadow: 0 0 4px rgba(217, 119, 6, 0.5);
+    }
+
+    .vault-dot.connected {
+      background: var(--accent-green);
+      box-shadow: 0 0 6px rgba(21, 128, 61, 0.6);
+    }
+
+    .vault-text {
+      color: var(--text-secondary);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .btn-vault {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--accent-blue);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+
+    .btn-vault:hover {
+      background: var(--accent-blue-subtle);
+      border-color: #bfdbfe;
+    }
+
+    /* ========================================================================= */
+    /* TRIPLE VERTICAL SCROLLING GRID (No Overlap, Distinct Columns)             */
+    /* ========================================================================= */
+    #triple-vertical-timeline {
+      display: grid;
+      grid-template-columns: 110px 150px 1fr;
+      height: calc(100vh - 60px);
+      width: 100vw;
+      overflow: hidden;
+      background: var(--bg-main);
+    }
+
+    /* ------------------------------------------------------------------------- */
+    /* SECTION 1: OUTER VERTICAL SECTION — YEARS                                 */
+    /* ------------------------------------------------------------------------- */
+    .column-years {
+      background: var(--bg-card-subtle);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .column-header {
+      padding: 12px 10px;
+      background: #e8e6df;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+
+    .column-header-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+
+    .column-header-hint {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    .track-years {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overscroll-behavior: contain;
+    }
+
+    .year-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 8px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.15s ease-out;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .year-card:hover {
+      border-color: var(--accent-gold);
+      background: #fffdfa;
+      transform: translateX(1px);
+    }
+
+    .year-card.active {
+      background: var(--accent-gold-subtle);
+      border-color: var(--accent-gold);
+      box-shadow: 0 1px 4px rgba(180, 83, 9, 0.2);
+    }
+
+    .year-number {
+      font-family: var(--font-heading);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .year-card.active .year-number {
+      color: var(--accent-gold);
+    }
+
+    .year-count-pill {
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 9999px;
+      background: var(--bg-card-subtle);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+    }
+
+    .year-card.active .year-count-pill {
+      background: var(--accent-gold);
+      color: #ffffff;
+      border-color: var(--accent-gold);
+    }
+
+    /* ------------------------------------------------------------------------- */
+    /* SECTION 2: INNER VERTICAL SECTION — MONTHS                                */
+    /* ------------------------------------------------------------------------- */
+    .column-months {
+      background: #faf9f6;
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .track-months {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      overscroll-behavior: contain;
+    }
+
+    .month-card {
+      padding: 7px 10px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .month-card:hover {
+      background: #f1f0ec;
+      color: var(--text-primary);
+    }
+
+    .month-card.has-data {
+      background: var(--bg-surface);
+      border-color: var(--border-color);
+      color: var(--text-primary);
+      font-weight: 600;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .month-card.has-data:hover {
+      border-color: var(--accent-blue);
+    }
+
+    .month-card.active {
+      background: var(--accent-blue-subtle);
+      border-color: #bfdbfe;
+      color: var(--accent-blue);
+      font-weight: 700;
+    }
+
+    .month-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-gold);
+      display: inline-block;
+      margin-right: 6px;
+    }
+
+    .month-badge {
+      font-size: 0.68rem;
+      padding: 1px 6px;
+      border-radius: 9999px;
+      background: var(--bg-card-subtle);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+    }
+
+    .month-card.active .month-badge {
+      background: var(--accent-blue);
+      color: #ffffff;
+      border-color: var(--accent-blue);
+    }
+
+    /* ------------------------------------------------------------------------- */
+    /* SECTION 3: CENTRAL SECTION — DAYS & RECORDS                               */
+    /* ------------------------------------------------------------------------- */
+    .column-days {
+      background: var(--bg-main);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Sticky Breadcrumb Bar atop Central Section */
+    .days-sticky-bar {
+      position: sticky;
+      top: 0;
+      background: rgba(247, 246, 243, 0.96);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 10px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+      flex-shrink: 0;
+    }
+
+    .days-breadcrumb {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .days-breadcrumb strong {
+      color: var(--text-primary);
+      font-family: var(--font-heading);
+      font-size: 0.9rem;
+    }
+
+    .days-feed-wrapper {
+      padding: 24px 36px 120px 36px;
+      max-width: 940px;
+      margin: 0 auto;
+      width: 100%;
+      position: relative;
+    }
+
+    /* Continuous Archival Spine Line */
+    .timeline-spine {
+      position: absolute;
+      top: 24px;
+      bottom: 60px;
+      left: 20px;
+      width: 2px;
+      background: linear-gradient(180deg, var(--border-color) 0%, #cbd5e1 50%, var(--border-color) 100%);
+      z-index: 1;
+    }
+
+    /* Date Group */
+    .date-section {
+      position: relative;
+      margin-bottom: 32px;
+      z-index: 2;
+    }
+
+    .date-section-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .date-spine-node {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 3px solid var(--accent-gold);
+      box-shadow: 0 0 0 4px var(--bg-main), var(--shadow-sm);
+      flex-shrink: 0;
+      margin-left: 13px;
+      z-index: 3;
+    }
+
+    .date-badge-pill {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 8px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      padding: 5px 14px;
+      border-radius: 9999px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .date-badge-text {
+      font-family: var(--font-heading);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .date-badge-edtf {
+      font-family: monospace;
+      font-size: 0.72rem;
+      color: var(--accent-gold);
+      font-weight: 600;
+    }
+
+    .date-cards-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-left: 48px;
+    }
+
+    /* Archival Document / Event Card */
+    .timeline-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      gap: 18px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+
+    .timeline-card:hover {
+      border-color: var(--border-hover);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+
+    /* Thumbnail Box with Click-to-Inspect */
+    .card-thumb-wrap {
+      width: 110px;
+      height: 145px;
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-color);
+      flex-shrink: 0;
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.15s, border-color 0.15s;
+    }
+
+    .card-thumb-wrap:hover {
+      transform: scale(1.02);
+      border-color: var(--accent-gold);
+    }
+
+    .card-thumb-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .thumb-inspect-hover {
+      position: absolute;
+      inset: 0;
+      background: rgba(26, 26, 23, 0.6);
+      backdrop-filter: blur(2px);
+      opacity: 0;
+      transition: opacity 0.15s ease-in-out;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-align: center;
+      padding: 6px;
+    }
+
+    .card-thumb-wrap:hover .thumb-inspect-hover {
+      opacity: 1;
+    }
+
+    /* Card Details Body */
+    .card-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-width: 0;
+    }
+
+    .card-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+
+    .card-heading {
+      font-family: var(--font-heading);
+      font-size: 1.08rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.3;
+      cursor: pointer;
+    }
+
+    .card-heading:hover {
+      color: var(--accent-gold);
+    }
+
+    .badge-kind-tag {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      letter-spacing: 0.05em;
+      flex-shrink: 0;
+    }
+
+    .badge-kind-tag.passport { background: var(--accent-red-subtle); color: var(--accent-red); border-color: #fca5a5; }
+    .badge-kind-tag.certificate { background: var(--accent-yellow-subtle); color: var(--accent-gold); border-color: #fde68a; }
+    .badge-kind-tag.photograph { background: var(--accent-blue-subtle); color: var(--accent-blue); border-color: #bfdbfe; }
+    .badge-kind-tag.manifest { background: var(--accent-green-subtle); color: var(--accent-green); border-color: #bbf7d0; }
+
+    .card-meta-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 14px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .card-meta-line span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .card-excerpt-text {
+      font-family: var(--font-archival);
+      font-size: 1.05rem;
+      line-height: 1.55;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .card-chips-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .person-chip-pill {
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: 9999px;
+      padding: 2px 8px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .person-chip-pill:hover {
+      background: #e4e2dc;
+      border-color: var(--border-hover);
+    }
+
+    .card-action-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 8px;
+      border-top: 1px solid var(--border-color);
+      font-size: 0.75rem;
+    }
+
+    .btn-card-inspect {
+      background: none;
+      border: none;
+      color: var(--accent-gold);
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.8rem;
+      padding: 4px 6px;
+      border-radius: 4px;
+      transition: background 0.15s;
+    }
+
+    .btn-card-inspect:hover {
+      background: var(--accent-gold-subtle);
+    }
+
+    .card-sha-code {
+      font-family: monospace;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+    }
+
+    /* Empty state */
+    .empty-feed {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-feed h3 {
+      font-family: var(--font-heading);
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    /* ========================================================================= */
+    /* MINI POP-UP PAGE (MODAL INSPECTION DIALOG)                                */
+    /* Strictly hidden when closed; styled in harmony with Archivesys Studio     */
+    /* ========================================================================= */
+    dialog.inspection-dialog:not([open]) {
+      display: none !important;
+    }
+
+    dialog.inspection-dialog[open] {
+      display: flex !important;
+      flex-direction: column;
+      position: fixed;
+      inset: 0;
+      margin: auto;
+      width: 90vw;
+      max-width: 1320px;
+      height: 86vh;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-hover);
+      border-radius: 12px;
+      box-shadow: var(--shadow-pop);
+      padding: 0;
+      overflow: hidden;
+      z-index: 9999;
+      outline: none;
+    }
+
+    dialog.inspection-dialog::backdrop {
+      background: rgba(26, 26, 23, 0.65);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    /* Modal Top Header */
+    .modal-top-bar {
+      background: var(--bg-card-subtle);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .modal-title-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .modal-h2 {
+      font-family: var(--font-heading);
+      font-size: 1.18rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 500px;
+    }
+
+    .badge-master-green {
+      background: var(--accent-green-subtle);
+      color: var(--accent-green);
+      border: 1px solid #bbf7d0;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-preview-yellow {
+      background: var(--accent-yellow-subtle);
+      color: var(--accent-gold);
+      border: 1px solid #fde68a;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .modal-ctrls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-modal-action {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s;
+    }
+
+    .btn-modal-action:hover {
+      background: var(--bg-card-subtle);
+      border-color: var(--border-hover);
+    }
+
+    .btn-modal-close-x {
+      background: var(--accent-red-subtle);
+      border: 1px solid #fca5a5;
+      color: var(--accent-red);
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      transition: all 0.15s;
+    }
+
+    .btn-modal-close-x:hover {
+      background: var(--accent-red);
+      color: #ffffff;
+    }
+
+    /* Modal Dual-Pane Body */
+    .modal-body-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      flex: 1;
+      overflow: hidden;
+      background: var(--bg-surface);
+    }
+
+    /* Left Pane: Scan Inspector */
+    .modal-scan-panel {
+      background: #1f2120;
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .scan-tools-bar {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(26, 26, 23, 0.85);
+      backdrop-filter: blur(8px);
+      padding: 4px 6px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-scan-btn {
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.15s;
+    }
+
+    .btn-scan-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-scan-btn.active-filter {
+      background: var(--accent-gold);
+      color: #ffffff;
+    }
+
+    .scan-tools-sep {
+      width: 1px;
+      height: 14px;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* The Curation Studio's viewer model: scroll to move, pinch or Cmd/Ctrl-scroll
+       to zoom, click to zoom into a spot and click again for the whole page.
+       No click-and-drag -- it is not how any operating system scrolls. The image
+       is laid out at its native size and fitted by the transform, so zooming
+       shows real detail instead of magnifying a downsampled copy. */
+    .scan-display-area {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      cursor: zoom-in;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .scan-display-area.is-zoomed { cursor: zoom-out; }
+
+    .scan-img-stage {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform-origin: 0 0;
+      will-change: transform;
+    }
+
+    .scan-img-stage.is-smooth {
+      transition: transform 0.22s cubic-bezier(0.2, 0.0, 0.2, 1);
+    }
+
+    .scan-img-stage img {
+      display: block;
+      max-width: none;
+      max-height: none;
+      border-radius: 4px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      -webkit-user-drag: none;
+    }
+
+    .scan-contrast-mode img { filter: contrast(1.6) brightness(1.05); }
+    .scan-invert-mode img { filter: invert(0.92) contrast(1.4); }
+
+    .scan-error-block {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #fca5a5;
+      background: rgba(220, 38, 38, 0.15);
+      border: 1px solid rgba(220, 38, 38, 0.4);
+      border-radius: 6px;
+      padding: 16px 20px;
+      text-align: center;
+      max-width: 400px;
+    }
+
+    /* An item scanned as several files: which page is showing, and the way to the others. */
+    .scan-pages {
+      position: absolute;
+      right: 14px;
+      bottom: 14px;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      background: rgba(15, 23, 42, 0.78);
+      color: #f8fafc;
+      padding: 3px;
+      border-radius: 20px;
+      font-size: 0.74rem;
+      font-weight: 500;
+    }
+
+    .scan-pages[hidden] {
+      display: none;
+    }
+
+    .scan-pages span {
+      padding: 0 6px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .scan-pages button {
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-size: 0.95rem;
+      line-height: 1;
+      padding: 4px 9px;
+      border-radius: 16px;
+      cursor: pointer;
+    }
+
+    .scan-pages button:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    .scan-pages button:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    .card-pages-badge {
+      position: absolute;
+      right: 6px;
+      bottom: 6px;
+      background: rgba(15, 23, 42, 0.78);
+      color: #f8fafc;
+      font-size: 0.64rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      padding: 2px 7px;
+      border-radius: 10px;
+      pointer-events: none;
+    }
+
+    .scan-hint {
+      position: absolute;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.78);
+      color: #f8fafc;
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 0.74rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      pointer-events: none;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      z-index: 5;
+    }
+
+    .scan-hint.is-hidden {
+      opacity: 0;
+      transform: translate(-50%, 8px);
+    }
+
+    /* A long title gives way before any control does: buttons and badges keep
+       their natural width, and only the title truncates. */
+    .modal-ctrls { flex-shrink: 0; }
+    .btn-modal-action,
+    .badge-master-green,
+    .badge-preview-yellow { white-space: nowrap; flex-shrink: 0; }
+
+    /* Editing: only when a live ArchiveSys serves the page. A published copy
+       has nothing to save to, so it stays a read-only record. */
+    .insp-edit, .insp-live-only { display: none !important; }
+    .inspection-dialog.is-live .insp-edit { display: block !important; }
+    .inspection-dialog.is-live .insp-live-only { display: inline-flex !important; }
+    .inspection-dialog.is-live .insp-view { display: none !important; }
+
+    .insp-input,
+    .insp-textarea {
+      width: 100%;
+      font: inherit;
+      color: var(--text-primary);
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 5px;
+      padding: 5px 8px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .insp-input:hover, .insp-textarea:hover { border-color: var(--border-hover); }
+
+    .insp-input:focus,
+    .insp-textarea:focus {
+      outline: none;
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px var(--accent-blue-subtle);
+    }
+
+    .insp-textarea { resize: vertical; line-height: 1.5; }
+
+    textarea.transcription-box.insp-textarea {
+      max-height: none;
+      min-height: 220px;
+      padding: 12px;
+      border-left: 3px solid var(--accent-gold);
+    }
+
+    .insp-date-reading {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .insp-date-reading.is-unreadable { color: var(--accent-red); }
+
+    .insp-save-state {
+      font-family: var(--font-body);
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .insp-save-state.is-saving { color: var(--accent-blue); }
+    .insp-save-state.is-saved { color: var(--accent-green); }
+    .insp-save-state.is-unsaved { color: var(--accent-gold); }
+    .insp-save-state.is-error { color: var(--accent-red); }
+
+    .insp-note {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    /* Right Pane: Database & Archival Metadata */
+    .modal-info-panel {
+      background: var(--bg-surface);
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .info-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 14px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .info-card-title {
+      font-family: var(--font-heading);
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--accent-gold);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 6px;
+    }
+
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    .info-table tr { border-bottom: 1px solid var(--bg-card-subtle); }
+    .info-table tr:last-child { border-bottom: none; }
+    .info-table th {
+      text-align: left;
+      color: var(--text-muted);
+      font-weight: 500;
+      padding: 6px 0;
+      width: 110px;
+      vertical-align: top;
+    }
+    .info-table td {
+      color: var(--text-primary);
+      padding: 6px 0;
+      vertical-align: top;
+    }
+
+    .copyable-code {
+      font-family: monospace;
+      font-size: 0.76rem;
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-color);
+      padding: 2px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .copyable-code:hover {
+      background: #e4e2dc;
+    }
+
+    .transcription-box {
+      font-family: var(--font-archival);
+      font-size: 1.15rem;
+      line-height: 1.7;
+      color: var(--text-primary);
+      white-space: pre-wrap;
+      max-height: 260px;
+      overflow-y: auto;
+      padding: 12px;
+      background: var(--bg-card-subtle);
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      border-left: 3px solid var(--accent-gold);
+    }
+
+    /* Sibling documents strip (cluster) */
+    .sibling-strip {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 4px 0;
+    }
+
+    .sibling-thumb {
+      width: 52px;
+      height: 68px;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 2px solid var(--border-color);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    .sibling-thumb:hover, .sibling-thumb.active {
+      border-color: var(--accent-gold);
+      transform: translateY(-2px);
+    }
+
+    .sibling-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* Toast Notification */
+    .toast-msg {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1a1a17;
+      color: #ffffff;
+      padding: 10px 18px;
+      border-radius: 6px;
+      box-shadow: var(--shadow-lg);
+      font-size: 0.82rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 10000;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+
+    .toast-msg.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast-msg.error {
+      background: var(--accent-red);
+    }
+
+    /* Fatal Dataset Error Overlay */
+    #fatal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 26, 23, 0.9);
+      z-index: 99999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      padding: 24px;
+    }
+
+    .fatal-card {
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      border: 2px solid var(--accent-red);
+      border-radius: 8px;
+      padding: 28px;
+      max-width: 580px;
+      box-shadow: var(--shadow-pop);
+    }
+
+    .fatal-card h2 {
+      font-family: var(--font-heading);
+      color: var(--accent-red);
+      margin-bottom: 10px;
+    }
+
+    .fatal-card pre {
+      background: var(--bg-card-subtle);
+      border: 1px solid var(--border-color);
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      color: var(--accent-red);
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1024px) {
+      #triple-vertical-timeline {
+        grid-template-columns: 100px 1fr;
+      }
+      .column-months {
+        display: none;
+      }
+      .modal-body-grid {
+        grid-template-columns: 1fr;
+        overflow-y: auto;
+      }
+      .modal-scan-panel {
+        height: 45vh;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================================= -->
+  <!-- Top Navigation Header Bar                                                 -->
+  <!-- ========================================================================= -->
+  <header class="dashboard-header">
+    <div class="header-left">
+      <div class="brand">
+        <span class="brand-badge">TIMELINE</span>
+        <h1>Timeline Projection</h1>
+      </div>
+      <div class="header-stats" id="timeline-stats-badge">
+        <span id="stats-years-range">—</span>
+        <span>•</span>
+        <strong id="stats-records-count">0 Records</strong>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <!-- Diacritic-Insensitive Search -->
+      <div class="search-box">
+        <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="timeline-search-input" class="search-input" placeholder="Search archive..." aria-label="Search records">
+        <button id="search-clear-btn" class="search-clear-btn" title="Clear search">✕</button>
+      </div>
+
+      <!-- Filters -->
+      <select id="filter-person" class="select-styled" aria-label="Filter by person">
+        <option value="all">All People</option>
+      </select>
+
+      <select id="filter-category" class="select-styled" aria-label="Filter by category">
+        <option value="all">All Categories</option>
+      </select>
+
+      <!-- Vault Connector Widget -->
+      <div class="vault-widget" id="vault-widget">
+        <span class="vault-dot" id="vault-dot" title="Yellow = Embedded previews; Green = 600 DPI masters linked"></span>
+        <span class="vault-text" id="vault-text">Previews Active</span>
+        <button id="btn-link-vault" class="btn-vault" title="Link your local scans folder to inspect 600 DPI master files">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+          <span>Link Vault</span>
+        </button>
+        <input type="file" id="vault-folder-input" webkitdirectory directory multiple style="display: none;">
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- TRIPLE VERTICAL SCROLLING INTERFACE (GRID)                                -->
+  <!-- ========================================================================= -->
+  <main id="triple-vertical-timeline" class="triple-vertical-timeline timeline-container">
+    
+    <!-- SECTION 1: OUTER VERTICAL SECTION — YEARS -->
+    <aside class="column-years rail-years" id="column-years" aria-label="Years navigation column">
+      <div class="column-header">
+        <span class="column-header-title">Years</span>
+        <span class="column-header-hint" id="years-count-hint">Scroll ↕</span>
+      </div>
+      <div class="track-years" id="track-years">
+        <!-- Injected via JavaScript -->
+      </div>
+    </aside>
+
+    <!-- SECTION 2: INNER VERTICAL SECTION — MONTHS -->
+    <aside class="column-months rail-months" id="column-months" aria-label="Months seasonal navigation column">
+      <div class="column-header">
+        <span class="column-header-title">Months</span>
+        <span class="column-header-hint" id="months-year-hint">—</span>
+      </div>
+      <div class="track-months" id="track-months">
+        <!-- Injected via JavaScript -->
+      </div>
+    </aside>
+
+    <!-- SECTION 3: CENTRAL SECTION — DAYS & ARCHIVAL RECORDS FEED -->
+    <section class="column-days rail-days" id="column-days" aria-label="Chronological archive stream">
+      
+      <!-- Sticky Breadcrumb Bar atop Central Section -->
+      <div class="days-sticky-bar">
+        <div class="days-breadcrumb">
+          <span>Active Period:</span>
+          <strong id="days-active-period-label">Chronological Stream</strong>
+        </div>
+        <div id="days-filter-status" style="font-size: 0.75rem; color: var(--text-muted);"></div>
+      </div>
+
+      <!-- Feed Container -->
+      <div class="days-feed-wrapper" id="days-feed-wrapper">
+        <div class="timeline-spine"></div>
+        <div id="timeline-cards-root">
+          <!-- Injected via JavaScript -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- MINI POP-UP PAGE (MODAL INSPECTION DIALOG)                                -->
+  <!-- Strictly hidden on load; only displayed when open                         -->
+  <!-- ========================================================================= -->
+  <dialog id="inspection-dialog" class="inspection-dialog" closedby="any" aria-modal="true" aria-labelledby="modal-h2">
+    
+    <!-- Modal Top Header -->
+    <div class="modal-top-bar">
+      <div class="modal-title-box">
+        <h2 class="modal-h2" id="modal-h2">Document Inspection</h2>
+        <span class="badge-kind-tag" id="modal-kind-tag">DOCUMENT</span>
+        <span id="modal-vault-pill" class="badge-preview-yellow">EMBEDDED PREVIEW</span>
+      </div>
+
+      <div class="modal-ctrls">
+        <button id="modal-btn-prev" class="btn-modal-action" title="Previous document (Left Arrow)">
+          <span>← Prev</span>
+        </button>
+        <button id="modal-btn-next" class="btn-modal-action" title="Next document (Right Arrow)">
+          <span>Next →</span>
+        </button>
+        <button id="modal-btn-studio" class="btn-modal-action insp-live-only" title="Open this document in the Curation Studio — people, kind, review and everything else">
+          <span>Open in Curation Studio</span>
+        </button>
+        <button id="modal-btn-popout" class="btn-modal-action" title="Open high-res scan in new tab">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+          <span>Pop Out</span>
+        </button>
+        <button id="modal-btn-close" class="btn-modal-close-x" title="Close inspector (Esc)">✕</button>
+      </div>
+    </div>
+
+    <!-- Modal Body: Dual-Pane Folio -->
+    <div class="modal-body-grid">
+      
+      <!-- Left Pane: Scan Inspector with Deep Pan & Zoom -->
+      <div class="modal-scan-panel" id="modal-scan-panel">
+        
+        <div class="scan-tools-bar">
+          <button id="btn-zoom-in" class="btn-scan-btn" title="Zoom In (+)">＋</button>
+          <button id="btn-zoom-out" class="btn-scan-btn" title="Zoom Out (-)">－</button>
+          <button id="btn-zoom-fit" class="btn-scan-btn" title="Fit to Viewport">Fit</button>
+          <button id="btn-zoom-100" class="btn-scan-btn" title="100% Size">1:1</button>
+          <div class="scan-tools-sep"></div>
+          <button id="btn-filter-raw" class="btn-scan-btn active-filter" title="Raw scan">Raw</button>
+          <button id="btn-filter-contrast" class="btn-scan-btn" title="Contrast boost for faint ink">Contrast</button>
+          <button id="btn-filter-invert" class="btn-scan-btn" title="Invert for reading blind seals">Invert</button>
+        </div>
+
+        <div class="scan-display-area" id="modal-scan-viewport">
+          <div class="scan-img-stage" id="modal-scan-stage">
+            <img id="modal-scan-img" src="" alt="Historical Scan" style="display: none;">
+          </div>
+          <div class="scan-error-block" id="modal-scan-err" style="display: none;">
+            <p id="modal-scan-err-txt">Scan asset could not be loaded.</p>
+          </div>
+          <div class="scan-hint" id="modal-scan-hint">Scroll to move &bull; Click to zoom</div>
+          <div class="scan-pages" id="modal-scan-pages" hidden>
+            <button type="button" id="modal-page-prev" title="Previous page ([)" aria-label="Previous page">&lsaquo;</button>
+            <span id="modal-page-label">Page 1 of 1</span>
+            <button type="button" id="modal-page-next" title="Next page (])" aria-label="Next page">&rsaquo;</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Pane: Archival & Database Metadata -->
+      <div class="modal-info-panel" id="modal-info-panel">
+        
+        <!-- Metadata Overview -->
+        <div class="info-card">
+          <div class="info-card-title">
+            <span>Archival Record Information</span>
+            <span id="modal-review-status" class="insp-view" style="font-size: 0.72rem; color: var(--text-muted);"></span>
+            <span id="modal-save-state" class="insp-save-state insp-live-only" aria-live="polite"></span>
+          </div>
+          <!-- Each row shows the record read-only; a live ArchiveSys swaps in
+               inputs that save as you type, through the studio's own endpoint. -->
+          <table class="info-table">
+            <tbody>
+              <tr>
+                <th>Title</th>
+                <td>
+                  <span id="modal-row-title" class="insp-view" style="font-weight: 600;">—</span>
+                  <input type="text" id="modal-edit-title" class="insp-input insp-edit" style="font-weight: 600;"
+                         placeholder="What would you call this in a family album?">
+                </td>
+              </tr>
+              <tr>
+                <th>Date</th>
+                <td>
+                  <span class="insp-view">
+                    <span id="modal-row-date">—</span>
+                    <span id="modal-row-edtf" style="font-family: monospace; color: var(--accent-gold); margin-left: 6px;"></span>
+                  </span>
+                  <div class="insp-edit">
+                    <input type="text" id="modal-edit-date" class="insp-input" autocomplete="off" spellcheck="false"
+                           placeholder="1923 · May 1923 · c. 1912 · 1920s · 1912–1915">
+                    <div class="insp-date-reading" id="modal-edit-date-reading"></div>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <th>Location</th>
+                <td>
+                  <span id="modal-row-location" class="insp-view">—</span>
+                  <input type="text" id="modal-edit-location" class="insp-input insp-edit" placeholder="Athens · Smyrna · Ellis Island">
+                </td>
+              </tr>
+              <tr>
+                <th>Language</th>
+                <td id="modal-row-lang">—</td>
+              </tr>
+              <tr>
+                <th>Summary</th>
+                <td>
+                  <span id="modal-row-summary" class="insp-view" style="font-family: var(--font-archival); font-size: 1.05rem; line-height: 1.5;">—</span>
+                  <textarea id="modal-edit-summary" class="insp-textarea insp-edit" rows="3"
+                            style="font-family: var(--font-archival); font-size: 1.05rem;"
+                            placeholder="What happened here? This is the line that shows on the timeline card."></textarea>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="insp-note" id="modal-edit-scope" style="display: none;"></p>
+        </div>
+
+        <!-- Participants Card -->
+        <div class="info-card" id="modal-people-card">
+          <div class="info-card-title">
+            <span>Historical Participants</span>
+          </div>
+          <div class="card-chips-row" id="modal-people-box" style="margin-bottom: 0;">
+            <!-- Populated via JS -->
+          </div>
+          <p class="insp-note insp-edit">Who is in it, and in what role, is changed in the Curation Studio.</p>
+        </div>
+
+        <!-- Full Polytonic Katharevousa Transcription -->
+        <div class="info-card">
+          <div class="info-card-title">
+            <span>Transcription</span>
+            <button id="btn-copy-trans" class="btn-card-inspect" style="padding: 2px 6px;" title="Copy transcription to clipboard">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <span>Copy</span>
+            </button>
+          </div>
+          <div class="transcription-box insp-view" id="modal-trans-box">
+            No transcription recorded.
+          </div>
+          <textarea id="modal-edit-trans" class="transcription-box insp-textarea insp-edit" rows="10"
+                    placeholder="Type what the page says, exactly as it says it."></textarea>
+        </div>
+
+        <!-- Forensic Provenance -->
+        <div class="info-card">
+          <div class="info-card-title">
+            <span>Forensic & Cryptographic Provenance</span>
+          </div>
+          <table class="info-table">
+            <tbody>
+              <tr>
+                <th>SHA-256</th>
+                <td>
+                  <span class="copyable-code" id="modal-row-sha" title="Click to copy full hash">
+                    —
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <th>Filename</th>
+                <td id="modal-row-filename" style="font-family: monospace; font-size: 0.78rem;">—</td>
+              </tr>
+              <tr>
+                <th>File Size</th>
+                <td id="modal-row-size">—</td>
+              </tr>
+              <tr>
+                <th>Tags</th>
+                <td>
+                  <span id="modal-row-tags" class="insp-view">—</span>
+                  <input type="text" id="modal-edit-tags" class="insp-input insp-edit" autocomplete="off"
+                         placeholder="migration, military, wartime">
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Attached Scans Strip (if cluster) -->
+        <div class="info-card" id="modal-cluster-card" style="display: none;">
+          <div class="info-card-title">
+            <span>Cluster Scans</span>
+            <span id="modal-cluster-count" style="font-size: 0.72rem; color: var(--text-muted);"></span>
+          </div>
+          <div class="sibling-strip" id="modal-cluster-strip">
+            <!-- Sibling thumbs -->
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </dialog>
+
+  <!-- Toast Message -->
+  <div class="toast-msg" id="toast-msg" role="alert">
+    <span id="toast-txt">Message</span>
+  </div>
+
+  <!-- Fatal Error Overlay -->
+  <div id="fatal-overlay">
+    <div class="fatal-card">
+      <h2>Timeline Initialization Error</h2>
+      <p id="fatal-desc">Could not initialize archive records.</p>
+      <pre id="fatal-stack"></pre>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- APPLICATION JAVASCRIPT                                                    -->
+  <!-- ========================================================================= -->
+  <!-- The Curation Studio's date reader (static/dates.js), inlined so the
+       inspector reads a typed date exactly as the studio does. -->
+  <script>
+{{ dates_js | safe }}
+  </script>
+
+  <script>
+    "use strict";
+
+    // 1. Explicit Error Logging & UI Notifications
+    function showFatal(title, err) {
+      console.error("[ArchiveSys Fatal Error]", title, err);
+      const overlay = document.getElementById("fatal-overlay");
+      const desc = document.getElementById("fatal-desc");
+      const stack = document.getElementById("fatal-stack");
+      if (overlay && desc && stack) {
+        desc.textContent = title;
+        stack.textContent = (err && err.stack) ? err.stack : String(err);
+        overlay.style.display = "flex";
+      }
+    }
+
+    let toastTimer = null;
+    function showToast(message, isError = false) {
+      const toast = document.getElementById("toast-msg");
+      const txt = document.getElementById("toast-txt");
+      if (!toast || !txt) return;
+      txt.textContent = message;
+      toast.className = isError ? "toast-msg show error" : "toast-msg show";
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.className = "toast-msg";
+      }, 3500);
+    }
+
+    window.addEventListener("error", (e) => {
+      console.error("[Runtime Error]", e.error || e.message);
+      showToast(`Error: ${e.message || "An unexpected error occurred"}`, true);
+    });
+
+    window.addEventListener("unhandledrejection", (e) => {
+      console.error("[Unhandled Promise Rejection]", e.reason);
+      showToast(`Async Error: ${e.reason?.message || e.reason || "Operation failed"}`, true);
+    });
+
+    // 2. Injected Datasets from Compiler
+    let rawEvents = [];
+    let rawDocuments = [];
+    let rawPeople = [];
+    let rawManifest = {};
+
+    try {
+      rawEvents = {{ events_json | safe }};
+      rawDocuments = {{ documents_json | safe }};
+      rawPeople = {{ people_json | safe }};
+      rawManifest = {{ manifest_json | safe }};
+    } catch (err) {
+      showFatal("Failed to parse compiled archive datasets.", err);
+    }
+
+    // 3. Vault Blob Map (SHA-256 -> Object URL)
+    const vaultBlobMap = new Map();
+
+    // 4. Polytonic Greek & French Diacritic Normalizer
+    function normalizeSearchKey(str) {
+      if (!str) return "";
+      return str
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/\u03c2/g, "\u03c3")
+        .replace(/\u0387/g, ":")
+        .replace(/\u037e/g, ";");
+    }
+
+    // 5. Resolved Document Image Resolver
+    function getResolvedDocImage(doc) {
+      if (!doc) return { url: "", isMaster: false, label: "No Document" };
+      const sha = (doc.sha256 || "").toLowerCase();
+      if (sha && vaultBlobMap.has(sha)) {
+        return { url: vaultBlobMap.get(sha), isMaster: true, label: "600 DPI MASTER (VAULT)" };
+      }
+      if (doc.preview_url) {
+        return { url: doc.preview_url, isMaster: false, label: "EMBEDDED PREVIEW" };
+      }
+      if (doc.file_path) {
+        return { url: doc.file_path, isMaster: false, label: "RELATIVE ASSET" };
+      }
+      return { url: "", isMaster: false, label: "MISSING ASSET" };
+    }
+
+    // 6. Web Crypto SHA-256 Hasher
+    async function hashFileSHA256(file) {
+      const buffer = await file.arrayBuffer();
+      const digest = await crypto.subtle.digest("SHA-256", buffer);
+      return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    // 7. Match Vault Files
+    async function matchFilesAgainstManifest(files) {
+      let matchedCount = 0;
+      const docsWithSha = rawDocuments.filter(d => d.sha256);
+      const sizeIndex = new Map();
+      docsWithSha.forEach(d => {
+        const sz = parseInt(d.file_size, 10);
+        if (!isNaN(sz) && sz > 0) {
+          if (!sizeIndex.has(sz)) sizeIndex.set(sz, []);
+          sizeIndex.get(sz).push(d);
+        }
+      });
+
+      for (const file of files) {
+        try {
+          const candidates = sizeIndex.get(file.size);
+          if (candidates && candidates.length > 0) {
+            const fileSha = await hashFileSHA256(file);
+            const match = candidates.find(c => (c.sha256 || "").toLowerCase() === fileSha.toLowerCase());
+            if (match) {
+              const blobUrl = URL.createObjectURL(file);
+              vaultBlobMap.set(match.sha256.toLowerCase(), blobUrl);
+              matchedCount++;
+            }
+          } else {
+            const nameMatch = rawDocuments.find(d => d.orig_filename && d.orig_filename.toLowerCase() === file.name.toLowerCase());
+            if (nameMatch && nameMatch.sha256 && !vaultBlobMap.has(nameMatch.sha256.toLowerCase())) {
+              const fileSha = await hashFileSHA256(file);
+              if (fileSha.toLowerCase() === nameMatch.sha256.toLowerCase()) {
+                const blobUrl = URL.createObjectURL(file);
+                vaultBlobMap.set(nameMatch.sha256.toLowerCase(), blobUrl);
+                matchedCount++;
+              }
+            }
+          }
+        } catch (fErr) {
+          console.warn("[Vault Match Error]", file.name, fErr);
+        }
+      }
+      return matchedCount;
+    }
+
+    // 8. Vault Linking UI Wiring
+    const btnLinkVault = document.getElementById("btn-link-vault");
+    const vaultInput = document.getElementById("vault-folder-input");
+    const vaultDot = document.getElementById("vault-dot");
+    const vaultText = document.getElementById("vault-text");
+
+    async function handleDirectorySelection() {
+      try {
+        let files = [];
+        if (window.showDirectoryPicker) {
+          vaultText.textContent = "Selecting folder...";
+          const dirHandle = await window.showDirectoryPicker({ mode: "read" });
+          vaultText.textContent = "Scanning files...";
+          for await (const entry of dirHandle.values()) {
+            if (entry.kind === "file") {
+              try {
+                const f = await entry.getFile();
+                files.push(f);
+              } catch (e) {}
+            }
+          }
+        } else {
+          vaultInput.click();
+          return;
+        }
+
+        const matched = await matchFilesAgainstManifest(files);
+        updateVaultStatus(matched);
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.error("[Vault Directory Picker Error]", err);
+          showToast(`Vault Error: ${err.message}`, true);
+          vaultInput.click();
+        } else {
+          vaultText.textContent = "Previews Active";
+        }
+      }
+    }
+
+    if (vaultInput) {
+      vaultInput.addEventListener("change", async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+        vaultText.textContent = "Matching fingerprints...";
+        try {
+          const matched = await matchFilesAgainstManifest(files);
+          updateVaultStatus(matched);
+        } catch (err) {
+          console.error("[Vault Matching Error]", err);
+          showToast(`Vault Error: ${err.message}`, true);
+        }
+      });
+    }
+
+    if (btnLinkVault) {
+      btnLinkVault.addEventListener("click", handleDirectorySelection);
+    }
+
+    function updateVaultStatus(matchedCount) {
+      if (matchedCount > 0) {
+        vaultDot.classList.add("connected");
+        vaultText.textContent = `Masters Linked (${matchedCount}/${rawDocuments.length})`;
+        showToast(`Linked ${matchedCount} high-resolution scans from vault!`);
+      } else {
+        vaultText.textContent = "No matching scans found";
+        showToast("No matching scans found in folder.", true);
+      }
+      if (activeRecord) {
+        populateModalRecord(activeRecord);
+      }
+    }
+
+    // =========================================================================
+    // DATA PROJECTION & GROUPING ENGINE
+    // =========================================================================
+    const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    let archiveItems = [];
+    let distinctYears = [];
+    let yearMonthCounts = new Map(); // "YYYY-M" -> count
+
+    function parseRecords() {
+      archiveItems = rawEvents.map(ev => {
+        let year = null;
+        let month = null; // 1-12
+        let day = null;
+
+        if (ev.start) {
+          const parts = ev.start.split("-");
+          if (parts[0]) year = parseInt(parts[0], 10);
+          if (parts[1]) month = parseInt(parts[1], 10);
+          if (parts[2]) day = parseInt(parts[2], 10);
+        } else if (ev.sort_start) {
+          year = Math.floor(ev.sort_start);
+        }
+
+        let primaryDoc = null;
+        if (ev.docs && ev.docs.length > 0) {
+          primaryDoc = rawDocuments.find(d => d.id === ev.docs[0].id) || ev.docs[0];
+        }
+
+        return {
+          id: ev.id,
+          source: ev.source || "document",
+          title: ev.title || "Archival Record",
+          description: ev.description || "",
+          category: (ev.category || "document").toLowerCase(),
+          edtf_date: ev.edtf_date || "",
+          date_display: ev.date_display || (year ? String(year) : "Undated"),
+          year: year,
+          month: month,
+          day: day,
+          sort_start: ev.sort_start || 0,
+          location: ev.location || "",
+          people: ev.people || [],
+          docs: ev.docs || [],
+          primaryDoc: primaryDoc,
+          search_content: primaryDoc ? (primaryDoc.search_content || "") : ""
+        };
+      });
+
+      archiveItems.sort((a, b) => (a.sort_start || 0) - (b.sort_start || 0));
+
+      const yearCounts = new Map();
+      yearMonthCounts.clear();
+
+      archiveItems.forEach(item => {
+        if (item.year) {
+          yearCounts.set(item.year, (yearCounts.get(item.year) || 0) + 1);
+          if (item.month) {
+            const key = `${item.year}-${item.month}`;
+            yearMonthCounts.set(key, (yearMonthCounts.get(key) || 0) + 1);
+          }
+        }
+      });
+
+      distinctYears = Array.from(yearCounts.keys()).sort((a, b) => a - b);
+
+      // Header stats
+      const rangeSpan = document.getElementById("stats-years-range");
+      const countStrong = document.getElementById("stats-records-count");
+      if (distinctYears.length > 0) {
+        rangeSpan.textContent = `${distinctYears[0]} — ${distinctYears[distinctYears.length - 1]}`;
+      } else {
+        rangeSpan.textContent = "No Dated Records";
+      }
+      countStrong.textContent = `${archiveItems.length} Records`;
+      document.getElementById("years-count-hint").textContent = `${distinctYears.length} YRS`;
+    }
+
+    // =========================================================================
+    // TRIPLE VERTICAL SCROLLING CONTROLLER
+    // =========================================================================
+    const trackYears = document.getElementById("track-years");
+    const trackMonths = document.getElementById("track-months");
+    const monthsYearHint = document.getElementById("months-year-hint");
+    const columnDays = document.getElementById("column-days");
+    const cardsRoot = document.getElementById("timeline-cards-root");
+    const activePeriodLabel = document.getElementById("days-active-period-label");
+
+    let currentSelectedYear = null;
+    let currentSelectedMonth = null;
+    let filteredItems = [];
+
+    // Render Column 1: Years
+    function renderYears(yearsList = null) {
+      trackYears.innerHTML = "";
+      const years = yearsList || distinctYears;
+
+      if (!years.length) {
+        trackYears.innerHTML = '<div style="color: var(--text-muted); font-size: 0.72rem; padding: 12px; text-align: center;">No records</div>';
+        return;
+      }
+
+      years.forEach(yr => {
+        const count = archiveItems.filter(i => i.year === yr).length;
+        const card = document.createElement("div");
+        card.className = `year-card ${yr === currentSelectedYear ? "active" : ""}`;
+        card.dataset.year = String(yr);
+        card.innerHTML = `
+          <span class="year-number">${yr}</span>
+          <span class="year-count-pill">${count}</span>
+        `;
+        card.addEventListener("click", () => {
+          selectYear(yr, true);
+        });
+        trackYears.appendChild(card);
+      });
+    }
+
+    // Render Column 2: Months
+    function renderMonths(yr) {
+      trackMonths.innerHTML = "";
+      currentSelectedYear = yr;
+      monthsYearHint.textContent = yr ? String(yr) : "—";
+
+      if (!yr) {
+        trackMonths.innerHTML = '<div style="color: var(--text-muted); font-size: 0.72rem; padding: 12px; text-align: center;">Select year</div>';
+        return;
+      }
+
+      for (let m = 1; m <= 12; m++) {
+        const count = yearMonthCounts.get(`${yr}-${m}`) || 0;
+        const monthLabel = MONTH_LABELS[m - 1];
+        const card = document.createElement("div");
+        card.className = `month-card ${count > 0 ? "has-data" : ""} ${m === currentSelectedMonth ? "active" : ""}`;
+        card.dataset.month = String(m);
+        card.innerHTML = `
+          <span>${count > 0 ? '<span class="month-dot"></span>' : ''}${monthLabel}</span>
+          ${count > 0 ? `<span class="month-badge">${count}</span>` : ''}
+        `;
+        card.addEventListener("click", () => {
+          selectMonth(yr, m, true);
+        });
+        trackMonths.appendChild(card);
+      }
+    }
+
+    // Render Column 3: Days & Records
+    function renderDays(items) {
+      cardsRoot.innerHTML = "";
+
+      if (!items || !items.length) {
+        cardsRoot.innerHTML = `
+          <div class="empty-feed">
+            <h3>No Archival Records Found</h3>
+            <p>No documents match the active search or filters.</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Group by Date Heading
+      const groups = new Map();
+      items.forEach(item => {
+        const key = item.date_display || (item.year ? String(item.year) : "Undated");
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(item);
+      });
+
+      for (const [dateText, groupItems] of groups.entries()) {
+        const first = groupItems[0];
+        const section = document.createElement("div");
+        section.className = "date-section";
+        section.dataset.year = first.year ? String(first.year) : "";
+        section.dataset.month = first.month ? String(first.month) : "";
+        section.id = `date-sec-${first.year || 'undated'}-${first.month || '0'}`;
+
+        const header = document.createElement("div");
+        header.className = "date-section-header";
+        header.innerHTML = `
+          <div class="date-spine-node"></div>
+          <div class="date-badge-pill">
+            <span class="date-badge-text">${dateText}</span>
+            ${first.edtf_date ? `<span class="date-badge-edtf">${first.edtf_date}</span>` : ''}
+          </div>
+        `;
+        section.appendChild(header);
+
+        const stack = document.createElement("div");
+        stack.className = "date-cards-stack";
+
+        groupItems.forEach(item => {
+          const card = createTimelineCard(item);
+          stack.appendChild(card);
+        });
+
+        section.appendChild(stack);
+        cardsRoot.appendChild(section);
+      }
+
+      bindScrollObserver();
+    }
+
+    // Create Individual Timeline Card
+    function createTimelineCard(item) {
+      const card = document.createElement("article");
+      card.className = "timeline-card";
+      card.dataset.id = String(item.id);
+
+      const resolved = getResolvedDocImage(item.primaryDoc);
+      const category = item.category || "document";
+
+      // People chips
+      let peopleHtml = "";
+      if (item.people && item.people.length > 0) {
+        peopleHtml = `
+          <div class="card-chips-row">
+            ${item.people.map(p => `
+              <span class="person-chip-pill" data-person-id="${p.id || ''}" title="Filter by ${p.name}">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <span>${p.name}</span>
+                ${p.role ? `<span style="color: var(--text-muted); font-size: 0.65rem;">(${p.role})</span>` : ''}
+              </span>
+            `).join("")}
+          </div>
+        `;
+      }
+
+      const thumbUrl = resolved.url || "";
+      const thumbMarkup = thumbUrl ? `
+        <img class="card-thumb-img" src="${thumbUrl}" alt="${item.title}" loading="lazy" onerror="this.style.display='none';">
+      ` : `
+        <span style="font-size: 0.72rem; color: var(--text-muted); padding: 4px; text-align: center;">No Scan</span>
+      `;
+
+      const pageCount = (item.primaryDoc && item.primaryDoc.pages || []).length;
+      card.innerHTML = `
+        <div class="card-thumb-wrap" role="button" tabindex="0" title="Click to inspect scan & record in detail">
+          ${thumbMarkup}
+          ${pageCount > 1 ? `<span class="card-pages-badge">${pageCount} pages</span>` : ""}
+          <div class="thumb-inspect-hover">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+            <span>INSPECT</span>
+          </div>
+        </div>
+
+        <div class="card-content">
+          <div>
+            <div class="card-title-row">
+              <h3 class="card-heading" title="Inspect record">${item.title}</h3>
+              <span class="badge-kind-tag ${category}">${category}</span>
+            </div>
+
+            <div class="card-meta-line">
+              ${item.location ? `
+                <span>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                  <span>${item.location}</span>
+                </span>
+              ` : ''}
+              ${item.primaryDoc && item.primaryDoc.language ? `
+                <span>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                  <span>${item.primaryDoc.language.toUpperCase()}</span>
+                </span>
+              ` : ''}
+              ${item.docs && item.docs.length > 1 ? `
+                <span style="color: var(--accent-gold); font-weight: 600;">${item.docs.length} Scans in Cluster</span>
+              ` : ''}
+            </div>
+
+            ${item.description ? `<p class="card-excerpt-text">${item.description}</p>` : ''}
+            ${peopleHtml}
+          </div>
+
+          <div class="card-action-bar">
+            <button class="btn-card-inspect">
+              <span>Inspect Scan & Database Record</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+            ${item.primaryDoc && item.primaryDoc.sha256 ? `
+              <span class="card-sha-code">SHA: ${item.primaryDoc.sha256.substring(0, 8)}</span>
+            ` : ''}
+          </div>
+        </div>
+      `;
+
+      const triggerInspect = () => openModal(item);
+      card.querySelector(".card-thumb-wrap").addEventListener("click", triggerInspect);
+      card.querySelector(".card-heading").addEventListener("click", triggerInspect);
+      card.querySelector(".btn-card-inspect").addEventListener("click", triggerInspect);
+
+      card.querySelectorAll(".person-chip-pill").forEach(chip => {
+        chip.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const pId = chip.dataset.personId;
+          const select = document.getElementById("filter-person");
+          if (select) {
+            select.value = pId;
+            applyFilters();
+          }
+        });
+      });
+
+      return card;
+    }
+
+    // Scroll selection actions
+    function selectYear(yr, shouldScroll = false) {
+      currentSelectedYear = yr;
+      renderMonths(yr);
+
+      document.querySelectorAll(".year-card").forEach(c => {
+        c.classList.toggle("active", c.dataset.year === String(yr));
+      });
+
+      if (shouldScroll) {
+        const target = Array.from(document.querySelectorAll(".date-section"))
+          .find(s => s.dataset.year === String(yr));
+        if (target) {
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }
+    }
+
+    function selectMonth(yr, m, shouldScroll = false) {
+      currentSelectedMonth = m;
+
+      document.querySelectorAll(".month-card").forEach(c => {
+        c.classList.toggle("active", c.dataset.month === String(m));
+      });
+
+      if (shouldScroll) {
+        const target = Array.from(document.querySelectorAll(".date-section"))
+          .find(s => s.dataset.year === String(yr) && s.dataset.month === String(m));
+        if (target) {
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+        } else {
+          selectYear(yr, true);
+        }
+      }
+    }
+
+    // IntersectionObserver to synchronize scroll position
+    let scrollObserver = null;
+    function bindScrollObserver() {
+      if (scrollObserver) scrollObserver.disconnect();
+
+      const sections = document.querySelectorAll(".date-section");
+      if (!sections.length) return;
+
+      scrollObserver = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const yr = parseInt(entry.target.dataset.year, 10);
+            const mo = parseInt(entry.target.dataset.month, 10);
+
+            if (yr && yr !== currentSelectedYear) {
+              selectYear(yr, false);
+            }
+            if (mo && mo !== currentSelectedMonth) {
+              selectMonth(yr, mo, false);
+            }
+
+            const headerText = entry.target.querySelector(".date-badge-text")?.textContent;
+            if (headerText) {
+              activePeriodLabel.textContent = headerText;
+            }
+            break;
+          }
+        }
+      }, {
+        root: columnDays,
+        rootMargin: "-10% 0px -70% 0px",
+        threshold: 0
+      });
+
+      sections.forEach(s => scrollObserver.observe(s));
+    }
+
+    // Direct wheel scroll on Year / Month columns
+    document.getElementById("column-years").addEventListener("wheel", (e) => {
+      trackYears.scrollTop += e.deltaY;
+    }, { passive: true });
+
+    document.getElementById("column-months").addEventListener("wheel", (e) => {
+      trackMonths.scrollTop += e.deltaY;
+    }, { passive: true });
+
+    // =========================================================================
+    // MINI POP-UP PAGE (MODAL INSPECTION DIALOG) CONTROLLER
+    //
+    // Served by a live ArchiveSys (the studio's Timeline Preview), the inspector
+    // shows each scan at full resolution and saves changes as you type, through
+    // the same endpoint as the Curation Studio. Opened on its own -- a published
+    // copy, a file on disk -- it stays a read-only record with embedded previews.
+    // =========================================================================
+    const inspectionDialog = document.getElementById("inspection-dialog");
+    const modalH2 = document.getElementById("modal-h2");
+    const modalKindTag = document.getElementById("modal-kind-tag");
+    const modalVaultPill = document.getElementById("modal-vault-pill");
+    const modalBtnClose = document.getElementById("modal-btn-close");
+    const modalBtnPrev = document.getElementById("modal-btn-prev");
+    const modalBtnNext = document.getElementById("modal-btn-next");
+    const modalBtnPopout = document.getElementById("modal-btn-popout");
+    const modalBtnStudio = document.getElementById("modal-btn-studio");
+
+    const scanViewport = document.getElementById("modal-scan-viewport");
+    const scanStage = document.getElementById("modal-scan-stage");
+    const scanImg = document.getElementById("modal-scan-img");
+    const scanErrBox = document.getElementById("modal-scan-err");
+    const scanErrTxt = document.getElementById("modal-scan-err-txt");
+    const scanHint = document.getElementById("modal-scan-hint");
+
+    let activeRecord = null;
+    let liveBackend = false;
+
+    // Explicitly guarantee dialog is closed on load
+    try {
+      if (inspectionDialog.open) inspectionDialog.close();
+    } catch (e) {}
+
+    // A live ArchiveSys answers /api/app; a published copy has no such route.
+    async function detectLiveBackend() {
+      if (!/^https?:$/.test(window.location.protocol)) return false;
+      try {
+        const res = await fetch("/api/app", { cache: "no-store" });
+        if (!res.ok) return false;
+        const about = await res.json();
+        return Boolean(about && about.app === "archivesys");
+      } catch (e) {
+        return false;
+      }
+    }
+
+    detectLiveBackend().then(live => {
+      liveBackend = live;
+      inspectionDialog.classList.toggle("is-live", live);
+      // Opened before the answer arrived: switch it over now. Nothing can have
+      // been typed yet -- the inputs only appear once the page is live.
+      if (live && inspectionDialog.open && activeRecord) populateModalRecord(activeRecord);
+    });
+
+    let scanHintShown = false;
+
+    function openModal(item) {
+      if (!item) {
+        showToast("Error: Record data missing", true);
+        return;
+      }
+      activeRecord = item;
+
+      if (typeof inspectionDialog.showModal === "function") {
+        if (!inspectionDialog.open) inspectionDialog.showModal();
+      } else {
+        inspectionDialog.setAttribute("open", "true");
+      }
+
+      if (!scanHintShown) {
+        scanHintShown = true;
+        scanHint.classList.remove("is-hidden");
+        setTimeout(hideScanHint, 4000);
+      } else {
+        hideScanHint();
+      }
+
+      // Populated once visible, so the scan is fitted to a viewer that has a size.
+      populateModalRecord(item);
+    }
+
+    function closeModal() {
+      if (inspectionDialog.open) {
+        inspectionDialog.close();
+      }
+    }
+
+    modalBtnClose.addEventListener("click", closeModal);
+
+    // However the inspector closes -- this button, Esc, or a click outside --
+    // anything typed is saved.
+    inspectionDialog.addEventListener("close", () => { saveInspectorEdits(); });
+
+    // Light-Dismiss: clicking backdrop outside dialog box closes it
+    inspectionDialog.addEventListener("click", (e) => {
+      if (e.target === inspectionDialog) {
+        const rect = inspectionDialog.getBoundingClientRect();
+        const inside = (
+          rect.top <= e.clientY && e.clientY <= rect.bottom &&
+          rect.left <= e.clientX && e.clientX <= rect.right
+        );
+        if (!inside) closeModal();
+      }
+    });
+
+    function populateModalRecord(item) {
+      const doc = item.primaryDoc || {};
+
+      modalH2.textContent = item.title;
+      modalKindTag.textContent = (item.category || "DOCUMENT").toUpperCase();
+
+      // Metadata Table (read-only view, as a published copy shows it)
+      document.getElementById("modal-row-title").textContent = item.title;
+      document.getElementById("modal-row-date").textContent = item.date_display;
+      document.getElementById("modal-row-edtf").textContent = item.edtf_date ? `(${item.edtf_date})` : "";
+      document.getElementById("modal-row-location").textContent = item.location || "Not specified";
+      document.getElementById("modal-row-lang").textContent = doc.language ? doc.language.toUpperCase() : "EL-POLY";
+      document.getElementById("modal-row-summary").textContent = item.description || doc.summary || "No archival notes recorded.";
+      document.getElementById("modal-review-status").textContent = doc.reviewed ? "✓ Reviewed Archival Entry" : "Draft Entry";
+
+      // People Box
+      const peopleBox = document.getElementById("modal-people-box");
+      peopleBox.innerHTML = "";
+      if (item.people && item.people.length > 0) {
+        item.people.forEach(p => {
+          const pill = document.createElement("span");
+          pill.className = "person-chip-pill";
+          pill.innerHTML = `<strong>${p.name}</strong> ${p.role ? `<span style="color: var(--text-muted); font-size: 0.65rem;">(${p.role})</span>` : ''}`;
+          peopleBox.appendChild(pill);
+        });
+        document.getElementById("modal-people-card").style.display = "block";
+      } else {
+        document.getElementById("modal-people-card").style.display = "none";
+      }
+
+      // Full Polytonic Katharevousa Transcription
+      const transBox = document.getElementById("modal-trans-box");
+      transBox.textContent = doc.transcription || "No transcription recorded for this document.";
+
+      // Provenance Table
+      const shaCode = document.getElementById("modal-row-sha");
+      if (doc.sha256) {
+        shaCode.textContent = `${doc.sha256.substring(0, 18)}... (click to copy)`;
+        shaCode.onclick = () => {
+          navigator.clipboard.writeText(doc.sha256);
+          showToast("Copied SHA-256 fingerprint!");
+        };
+      } else {
+        shaCode.textContent = "None";
+        shaCode.onclick = null;
+      }
+
+      document.getElementById("modal-row-filename").textContent = doc.orig_filename || (doc.file_path ? doc.file_path.split("/").pop() : "—");
+      document.getElementById("modal-row-size").textContent = doc.file_size ? `${(doc.file_size / 1024).toFixed(1)} KB` : "—";
+      document.getElementById("modal-row-tags").textContent = (doc.tags || []).join(", ") || "None";
+
+      // Cluster Scans Strip
+      const clusterCard = document.getElementById("modal-cluster-card");
+      const clusterStrip = document.getElementById("modal-cluster-strip");
+      if (item.docs && item.docs.length > 1) {
+        clusterCard.style.display = "block";
+        document.getElementById("modal-cluster-count").textContent = `${item.docs.length} total`;
+        clusterStrip.innerHTML = "";
+        item.docs.forEach((d, i) => {
+          const sDoc = rawDocuments.find(x => x.id === d.id) || d;
+          const sRes = getResolvedDocImage(sDoc);
+          const thumb = document.createElement("div");
+          thumb.className = `sibling-thumb ${sDoc.id === doc.id ? 'active' : ''}`;
+          thumb.title = `Scan ${i + 1}`;
+          thumb.innerHTML = `<img src="${sRes.url}" alt="Scan ${i + 1}">`;
+          thumb.addEventListener("click", () => {
+            saveInspectorEdits();
+            item.primaryDoc = sDoc;
+            populateModalRecord(item);
+          });
+          clusterStrip.appendChild(thumb);
+        });
+      } else {
+        clusterCard.style.display = "none";
+      }
+
+      fillEditor(item, doc);
+      showScan(doc);
+      activePage = 0;
+      editPage = null;
+      renderPageBar(doc);
+    }
+
+    // -------------------------------------------------------------------------
+    // Pages. An item scanned as several files shows one page at a time; the
+    // record describes the item, the transcription belongs to the page shown.
+    // -------------------------------------------------------------------------
+    let activePage = 0;
+    let editPage = null;     // the page whose text the editor holds, when not the first
+    const pagesBar = document.getElementById("modal-scan-pages");
+    const pageLabel = document.getElementById("modal-page-label");
+    const pagePrev = document.getElementById("modal-page-prev");
+    const pageNext = document.getElementById("modal-page-next");
+
+    function pagesOf(doc) {
+      return doc && Array.isArray(doc.pages) && doc.pages.length > 1 ? doc.pages : null;
+    }
+
+    function renderPageBar(doc) {
+      const pages = pagesOf(doc);
+      pagesBar.hidden = !pages;
+      if (!pages) return;
+      pageLabel.textContent = `Page ${activePage + 1} of ${pages.length}`;
+      pagePrev.disabled = activePage === 0;
+      pageNext.disabled = activePage === pages.length - 1;
+    }
+
+    function showPage(index) {
+      const doc = activeRecord && activeRecord.primaryDoc;
+      const pages = pagesOf(doc);
+      if (!pages) return;
+      const next = Math.max(0, Math.min(pages.length - 1, index));
+      if (next === activePage) return;
+      saveInspectorEdits();                 // the text typed so far belongs to the page it was typed on
+      activePage = next;
+      const page = pages[activePage];
+      const shown = activePage === 0 ? doc : { ...page, language: doc.language };
+      editPage = activePage === 0 ? null : page;
+
+      const text = activePage === 0 ? doc.transcription : page.transcription;
+      document.getElementById("modal-trans-box").textContent = text || "No transcription recorded for this page.";
+      document.getElementById("modal-row-filename").textContent = page.name || (page.file_path || "").split("/").pop();
+      document.getElementById("modal-row-size").textContent = page.file_size ? `${(page.file_size / 1024).toFixed(1)} KB` : "—";
+      document.getElementById("modal-row-sha").textContent = page.sha256 ? `${page.sha256.substring(0, 18)}...` : "None";
+      if (editDoc) {
+        editInputs.transcription.value = text || "";
+        editSaved.transcription = editInputs.transcription.value;
+      }
+      showScan(shown);
+      renderPageBar(doc);
+    }
+
+    pagePrev.addEventListener("click", (e) => { e.stopPropagation(); showPage(activePage - 1); });
+    pageNext.addEventListener("click", (e) => { e.stopPropagation(); showPage(activePage + 1); });
+    ["mousedown", "mouseup", "wheel"].forEach(type => pagesBar.addEventListener(type, e => e.stopPropagation()));
+
+    // Modal Prev / Next Navigation
+    function stepModal(dir) {
+      const list = filteredItems.length > 0 ? filteredItems : archiveItems;
+      if (!list.length || !activeRecord) return;
+      let idx = list.findIndex(i => i.id === activeRecord.id);
+      if (idx === -1) {
+        // The record has left the timeline (it was made undated): step from where it stood.
+        const after = list.findIndex(i => (i.sort_start || 0) > (activeRecord.sort_start || 0));
+        idx = (after === -1 ? list.length : after) - (dir > 0 ? 1 : 0);
+      }
+
+      const nextIdx = idx + dir;
+      if (nextIdx >= 0 && nextIdx < list.length) {
+        saveInspectorEdits();
+        activeRecord = list[nextIdx];
+        populateModalRecord(activeRecord);
+      } else {
+        showToast(dir > 0 ? "Reached end of records" : "Reached beginning of records");
+      }
+    }
+
+    modalBtnPrev.addEventListener("click", () => stepModal(-1));
+    modalBtnNext.addEventListener("click", () => stepModal(1));
+
+    // Pop Out: the original file when there is one -- a linked vault's copy or
+    // the live server's -- and the embedded preview only as a last resort.
+    modalBtnPopout.addEventListener("click", () => {
+      if (!activeRecord) return;
+      const doc = activeRecord.primaryDoc;
+      const resolved = getResolvedDocImage(doc);
+      const url = resolved.isMaster ? resolved.url : (masterUrl(doc) || resolved.url);
+      if (url) {
+        window.open(url, "_blank");
+      } else {
+        showToast("No scan URL available to pop out", true);
+      }
+    });
+
+    // Open in Curation Studio: everything this panel does not edit -- people,
+    // kind, review state -- lives there.
+    modalBtnStudio.addEventListener("click", async () => {
+      const doc = editDoc || (activeRecord && activeRecord.primaryDoc);
+      if (!doc || !Number.isInteger(doc.id)) return;
+      await saveInspectorEdits();
+      try {
+        if (window.parent !== window && typeof window.parent.openDocInCuration === "function") {
+          closeModal();
+          window.parent.openDocInCuration(doc.id);
+          return;
+        }
+      } catch (e) { /* embedded by some other page */ }
+      // Opened in a tab of its own: have the studio open on this record, then go there.
+      try {
+        const session = await (await fetch("/api/session")).json();
+        await fetch("/api/session", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...session, view: "curation", doc_id: doc.id }),
+        });
+      } catch (e) { /* the studio still opens, on its last record */ }
+      window.location.href = "/curate";
+    });
+
+    // Copy Transcription button
+    document.getElementById("btn-copy-trans").addEventListener("click", () => {
+      const text = liveBackend ? editInputs.transcription.value : document.getElementById("modal-trans-box").textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast("Transcription copied to clipboard!");
+      }).catch(() => {
+        showToast("Failed to copy to clipboard", true);
+      });
+    });
+
+    // -------------------------------------------------------------------------
+    // The scan: shown at once from what the page carries, then replaced by the
+    // full-resolution scan -- the live server's original, or the copy an export
+    // writes beside the page. The embedded preview is fine for a card and a
+    // first look, too coarse to read a faded hand.
+    // -------------------------------------------------------------------------
+    let scanRequest = 0;     // a slow master must not land on a record already left
+    let keepView = null;     // the view carried across the preview -> master swap
+
+    function masterUrl(doc) {
+      if (!doc) return "";
+      if (liveBackend && Number.isInteger(doc.id)) return `/api/image?doc_id=${doc.id}`;
+      // A published page: the full-size scan exported beside it, if it came along.
+      return doc.view_url || "";
+    }
+
+    function setResolutionBadge(state) {
+      const [text, cls] = {
+        full: ["FULL RESOLUTION", "badge-master-green"],
+        vault: ["ORIGINAL (LINKED VAULT)", "badge-master-green"],
+        loading: ["LOADING FULL RESOLUTION…", "badge-preview-yellow"],
+        preview: ["EMBEDDED PREVIEW", "badge-preview-yellow"],
+      }[state] || ["EMBEDDED PREVIEW", "badge-preview-yellow"];
+      modalVaultPill.textContent = text;
+      modalVaultPill.className = cls;
+    }
+
+    function showScan(doc) {
+      const request = ++scanRequest;
+      const resolved = getResolvedDocImage(doc);
+      const master = resolved.isMaster ? "" : masterUrl(doc);
+      const first = resolved.url || master;
+      keepView = null;
+
+      if (!first) {
+        scanImg.removeAttribute("src");
+        scanImg.style.display = "none";
+        scanErrBox.style.display = "block";
+        scanErrTxt.textContent = "No scan image associated with this record.";
+        setResolutionBadge("preview");
+        return;
+      }
+
+      setResolutionBadge(resolved.isMaster ? "vault" : master ? "loading" : "preview");
+      scanImg.dataset.master = master;
+      scanImg.src = first;
+
+      if (master && first !== master) {
+        const full = new Image();
+        full.onload = () => {
+          if (request !== scanRequest) return;
+          keepView = captureScanView();
+          scanImg.src = master;           // already fetched, so it arrives at once
+        };
+        full.onerror = () => {
+          // A TIFF or PDF the browser cannot draw, or a missing file: keep the preview.
+          if (request === scanRequest) setResolutionBadge("preview");
+        };
+        full.src = master;
+      }
+    }
+
+    scanImg.onload = function() {
+      scanImg.style.display = "block";
+      scanErrBox.style.display = "none";
+      if (scanImg.dataset.master && scanImg.src.endsWith(scanImg.dataset.master)) setResolutionBadge("full");
+      fitScan("contain", false);
+      if (keepView) {
+        restoreScanView(keepView);
+        keepView = null;
+      }
+    };
+
+    scanImg.onerror = function() {
+      scanImg.style.display = "none";
+      scanErrBox.style.display = "block";
+      scanErrTxt.textContent = "Could not load this scan. Verify the file, or link a vault.";
+    };
+
+    // -------------------------------------------------------------------------
+    // Moving around the scan -- the Curation Studio's model. Scroll (or a
+    // two-finger swipe) moves; pinch or Cmd/Ctrl-scroll zooms at the pointer; a
+    // click zooms into that spot and another click shows the whole page again.
+    // There is deliberately no click-and-drag: no operating system scrolls that
+    // way, and it made the page feel stuck.
+    // -------------------------------------------------------------------------
+    let zoomScale = 1;
+    let fitScale = 1;
+    let panX = 0;
+    let panY = 0;
+    let pressX = null;
+    let pressY = null;
+
+    function applyScanTransform(smooth) {
+      scanStage.classList.toggle("is-smooth", Boolean(smooth));
+      scanStage.style.transform = `translate(${Math.round(panX)}px, ${Math.round(panY)}px) scale(${zoomScale})`;
+      scanViewport.classList.toggle("is-zoomed", zoomScale > fitScale * 1.35);
+    }
+
+    // Centre the page along any axis it does not fill; otherwise keep it in view.
+    function clampScanPan() {
+      const vw = scanViewport.clientWidth;
+      const vh = scanViewport.clientHeight;
+      const w = scanImg.naturalWidth * zoomScale;
+      const h = scanImg.naturalHeight * zoomScale;
+      const pad = 24;
+      panX = w <= vw ? (vw - w) / 2 : Math.min(pad, Math.max(vw - w - pad, panX));
+      panY = h <= vh ? (vh - h) / 2 : Math.min(pad, Math.max(vh - h - pad, panY));
+    }
+
+    function fitScan(mode = "contain", smooth = false) {
+      const w = scanImg.naturalWidth;
+      const h = scanImg.naturalHeight;
+      const vw = scanViewport.clientWidth;
+      const vh = scanViewport.clientHeight;
+      if (!w || !h || vw <= 0 || vh <= 0) return;
+      const pad = 20;
+      const availW = Math.max(50, vw - pad * 2);
+      const availH = Math.max(50, vh - pad * 2);
+      fitScale = Math.min(availW / w, availH / h);
+      zoomScale = mode === "width" ? Math.min(availW / w, 4) : fitScale;
+      panX = (vw - w * zoomScale) / 2;
+      panY = mode === "width" ? pad : (vh - h * zoomScale) / 2;
+      applyScanTransform(smooth);
+    }
+
+    function zoomScanTo(next, clientX, clientY, smooth = false) {
+      const target = Math.min(8, Math.max(0.05, next));
+      const rect = scanViewport.getBoundingClientRect();
+      const ox = clientX === undefined ? scanViewport.clientWidth / 2 : clientX - rect.left;
+      const oy = clientY === undefined ? scanViewport.clientHeight / 2 : clientY - rect.top;
+      panX = ox - ((ox - panX) * target) / zoomScale;
+      panY = oy - ((oy - panY) * target) / zoomScale;
+      zoomScale = target;
+      clampScanPan();
+      applyScanTransform(smooth);
+    }
+
+    // Zoom relative to "fit page", position as the point of the page at the
+    // centre: both survive swapping the preview for a larger master.
+    function captureScanView() {
+      const w = scanImg.naturalWidth;
+      const h = scanImg.naturalHeight;
+      if (!w || !h || !fitScale) return null;
+      return {
+        zoom: zoomScale / fitScale,
+        cx: (scanViewport.clientWidth / 2 - panX) / zoomScale / w,
+        cy: (scanViewport.clientHeight / 2 - panY) / zoomScale / h,
+      };
+    }
+
+    function restoreScanView(view) {
+      const w = scanImg.naturalWidth;
+      const h = scanImg.naturalHeight;
+      if (!w || !h) return;
+      zoomScale = Math.min(8, Math.max(0.05, fitScale * view.zoom));
+      panX = scanViewport.clientWidth / 2 - view.cx * w * zoomScale;
+      panY = scanViewport.clientHeight / 2 - view.cy * h * zoomScale;
+      clampScanPan();
+      applyScanTransform(false);
+    }
+
+    function hideScanHint() {
+      scanHint.classList.add("is-hidden");
+    }
+
+    scanViewport.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      hideScanHint();
+      if (!scanImg.naturalWidth) return;
+      // A trackpad pinch arrives as a wheel event with ctrlKey set.
+      if (e.ctrlKey || e.metaKey) {
+        zoomScanTo(zoomScale * (e.deltaY < 0 ? 1.1 : 1 / 1.1), e.clientX, e.clientY);
+        return;
+      }
+      const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? scanViewport.clientHeight : 1;
+      let dx = e.deltaX * unit;
+      let dy = e.deltaY * unit;
+      if (e.shiftKey && !dx) {
+        dx = dy;
+        dy = 0;
+      }
+      panX -= dx;
+      panY -= dy;
+      clampScanPan();
+      applyScanTransform(false);
+    }, { passive: false });
+
+    // A press counts as a click only if the pointer stays put. Moving while
+    // pressed does nothing at all: no drag, and no surprise zoom on release.
+    scanViewport.addEventListener("mousedown", (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();          // no text selection, no native image drag
+      pressX = e.clientX;
+      pressY = e.clientY;
+    });
+
+    window.addEventListener("mouseup", (e) => {
+      if (pressX === null) return;
+      const moved = Math.hypot(e.clientX - pressX, e.clientY - pressY);
+      pressX = null;
+      pressY = null;
+      if (moved > 5 || !scanViewport.contains(e.target)) return;
+      zoomOnClick(e);
+    });
+
+    scanViewport.addEventListener("dragstart", (e) => e.preventDefault());
+
+    function zoomOnClick(e) {
+      if (!scanImg.naturalWidth || scanImg.style.display === "none") return;
+      hideScanHint();
+      if (e.altKey || e.shiftKey || zoomScale > fitScale * 1.35) {
+        fitScan("contain", true);
+        return;
+      }
+      const rect = scanViewport.getBoundingClientRect();
+      const px = (e.clientX - rect.left - panX) / zoomScale;
+      const py = (e.clientY - rect.top - panY) / zoomScale;
+      // A comfortable reading size: 2.5x "fit page", at least 150%, at most 400%.
+      const target = Math.min(4, Math.max(1.5, fitScale * 2.5));
+      zoomScale = target;
+      panX = scanViewport.clientWidth / 2 - px * target;
+      panY = scanViewport.clientHeight / 2 - py * target;
+      clampScanPan();
+      applyScanTransform(true);
+    }
+
+    window.addEventListener("resize", () => {
+      if (inspectionDialog.open && Math.abs(zoomScale - fitScale) < 0.02) fitScan("contain", false);
+    });
+
+    document.getElementById("btn-zoom-in").addEventListener("click", () => {
+      zoomScanTo(zoomScale * 1.25, undefined, undefined, true);
+    });
+
+    document.getElementById("btn-zoom-out").addEventListener("click", () => {
+      zoomScanTo(zoomScale / 1.25, undefined, undefined, true);
+    });
+
+    document.getElementById("btn-zoom-fit").addEventListener("click", () => fitScan("contain", true));
+
+    document.getElementById("btn-zoom-100").addEventListener("click", () => {
+      zoomScanTo(1, undefined, undefined, true);
+    });
+
+    // Scan Filter Buttons
+    const btnRaw = document.getElementById("btn-filter-raw");
+    const btnContrast = document.getElementById("btn-filter-contrast");
+    const btnInvert = document.getElementById("btn-filter-invert");
+
+    function setFilter(cls) {
+      scanStage.classList.remove("scan-contrast-mode", "scan-invert-mode");
+      if (cls) scanStage.classList.add(cls);
+      btnRaw.classList.toggle("active-filter", cls === "");
+      btnContrast.classList.toggle("active-filter", cls === "scan-contrast-mode");
+      btnInvert.classList.toggle("active-filter", cls === "scan-invert-mode");
+    }
+
+    btnRaw.addEventListener("click", () => setFilter(""));
+    btnContrast.addEventListener("click", () => setFilter("scan-contrast-mode"));
+    btnInvert.addEventListener("click", () => setFilter("scan-invert-mode"));
+
+    // -------------------------------------------------------------------------
+    // Editing -- live ArchiveSys only. One writer: the Curation Studio's own
+    // endpoint, sent only the fields changed here, never people or review state
+    // (this panel does not show enough of either to change them safely).
+    // -------------------------------------------------------------------------
+    const editInputs = {
+      title: document.getElementById("modal-edit-title"),
+      date: document.getElementById("modal-edit-date"),
+      location: document.getElementById("modal-edit-location"),
+      summary: document.getElementById("modal-edit-summary"),
+      transcription: document.getElementById("modal-edit-trans"),
+      tags: document.getElementById("modal-edit-tags"),
+    };
+    const dateReading = document.getElementById("modal-edit-date-reading");
+    const saveStateEl = document.getElementById("modal-save-state");
+    const editScope = document.getElementById("modal-edit-scope");
+    const UNREADABLE_DATE = "That date can't be read yet — everything else is saved";
+
+    let editDoc = null;      // the document these fields belong to
+    let editSaved = {};      // what the server holds for each field
+    let editTimer = null;
+
+    function editorFields() {
+      const date = parseHistoricalDate(editInputs.date.value);
+      return {
+        title: editInputs.title.value.trim(),
+        // An unreadable date is left out rather than sent: the server refuses
+        // anything it cannot read, and a guess would put the card in the wrong year.
+        edtf_date: date.empty ? "" : (date.ok ? date.edtf : undefined),
+        location: editInputs.location.value.trim(),
+        summary: editInputs.summary.value.trim(),
+        transcription: editInputs.transcription.value,
+        tags: editInputs.tags.value.split(",").map(t => t.trim()).filter(Boolean),
+      };
+    }
+
+    function changedFields() {
+      const out = {};
+      for (const [key, value] of Object.entries(editorFields())) {
+        if (value === undefined) continue;
+        if (JSON.stringify(value) !== JSON.stringify(editSaved[key])) out[key] = value;
+      }
+      return out;
+    }
+
+    function renderDateReading() {
+      const r = parseHistoricalDate(editInputs.date.value);
+      dateReading.textContent = r.empty ? "Undated — it leaves the timeline until it has a date again." : r.reading;
+      dateReading.classList.toggle("is-unreadable", !r.empty && !r.ok);
+    }
+
+    function setSaveState(state, message) {
+      const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      saveStateEl.textContent = message || {
+        idle: "Changes save as you type",
+        unsaved: "Unsaved",
+        saving: "Saving…",
+        saved: `Saved ${time}`,
+        error: "Could not save — your typing is still here",
+      }[state] || "";
+      saveStateEl.className = `insp-save-state insp-live-only is-${state}`;
+    }
+
+    function fillEditor(item, doc) {
+      editDoc = liveBackend && Number.isInteger(doc.id) ? doc : null;
+      clearTimeout(editTimer);
+      editTimer = null;
+      editInputs.title.value = doc.title || "";
+      editInputs.date.value = doc.edtf_date || "";
+      editInputs.location.value = doc.location || "";
+      editInputs.summary.value = doc.summary || "";
+      editInputs.transcription.value = doc.transcription || "";
+      editInputs.tags.value = (doc.tags || []).join(", ");
+      renderDateReading();
+      editSaved = editorFields();
+      // An entry with no document behind it (a remembered event) has nothing here to save to.
+      Object.values(editInputs).forEach(input => { input.disabled = !editDoc; });
+      if (editDoc) setSaveState("idle");
+      else setSaveState("idle", "No document to edit here — open it in the Curation Studio");
+      const isCluster = item.source === "cluster";
+      editScope.textContent = isCluster
+        ? "These fields belong to the scan shown. The cluster's own title and date are set in the Curation Studio."
+        : "";
+      editScope.style.display = liveBackend && isCluster ? "block" : "none";
+    }
+
+    Object.values(editInputs).forEach(input => {
+      input.addEventListener("input", () => {
+        if (!editDoc) return;
+        if (input === editInputs.date) renderDateReading();
+        setSaveState("unsaved");
+        clearTimeout(editTimer);
+        editTimer = setTimeout(saveInspectorEdits, 700);
+      });
+    });
+
+    function saveInspectorEdits({ keepalive = false } = {}) {
+      clearTimeout(editTimer);
+      editTimer = null;
+      const doc = editDoc;
+      if (!doc) return Promise.resolve();
+      // Read everything now: the panel may move on to another record before
+      // the server answers, and these values belong to this one.
+      const fields = changedFields();
+      const dateUnreadable = editorFields().edtf_date === undefined;
+      const baseline = editSaved;
+      if (!Object.keys(fields).length) {
+        if (dateUnreadable) setSaveState("error", UNREADABLE_DATE);
+        else if (saveStateEl.classList.contains("is-unsaved")) setSaveState("saved");
+        return Promise.resolve();
+      }
+
+      setSaveState("saving");
+      const post = (id, body) => fetch(`/api/documents/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fields: body }),
+        keepalive,
+      })
+        .then(async res => {
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.detail || `the server answered ${res.status}`);
+          return data.document;
+        });
+
+      // The item's fields go to the item; the text shown goes to its page.
+      const page = editPage;
+      let work;
+      if (page && fields.transcription !== undefined) {
+        const { transcription, ...itemFields } = fields;
+        work = Promise.all([
+          Object.keys(itemFields).length ? post(doc.id, itemFields) : Promise.resolve(null),
+          post(page.id, { transcription }).then(() => { page.transcription = transcription; }),
+        ]).then(([saved]) => saved);
+      } else {
+        work = post(doc.id, fields);
+      }
+
+      return work
+        .then(saved => {
+          Object.assign(baseline, fields);
+          if (editDoc === doc) {
+            if (editTimer) setSaveState("unsaved");
+            else if (dateUnreadable) setSaveState("error", UNREADABLE_DATE);
+            else setSaveState("saved");
+          }
+          return saved ? applySavedDocument(saved) : undefined;
+        })
+        .catch(err => {
+          if (editDoc === doc) setSaveState("error", `Could not save — ${err.message}. Your typing is still here.`);
+        });
+    }
+
+    // A reload of the preview (Refresh, Recompile) must not drop the last keystrokes.
+    window.addEventListener("pagehide", () => {
+      if (editTimer) saveInspectorEdits({ keepalive: true });
+    });
+
+    // The studio holds its own copy of each record; tell it about this one, so
+    // its editor never autosaves the old values back over the change.
+    function notifyStudio(saved) {
+      try {
+        if (window.parent !== window) {
+          window.parent.postMessage({ type: "archivesys:document-saved", document: saved }, window.location.origin);
+        }
+      } catch (e) { /* not inside the studio */ }
+    }
+
+    // Put the saved record back into the page: the document itself, then its
+    // timeline entry exactly as the server now projects it -- so a changed date
+    // moves the card to where a recompile would put it.
+    async function applySavedDocument(saved) {
+      if (!saved || !Number.isInteger(saved.id)) return;
+      const doc = rawDocuments.find(d => d.id === saved.id);
+      if (doc) {
+        ["title", "summary", "location", "edtf_date", "date_display", "sort_start", "sort_end",
+         "transcription", "tags", "search_content", "reviewed"].forEach(key => {
+          if (key in saved) doc[key] = saved[key];
+        });
+      }
+      notifyStudio(saved);
+
+      let entries;
+      try {
+        const res = await fetch(`/api/timeline/entries?doc_id=${saved.id}`, { cache: "no-store" });
+        if (!res.ok) return;
+        entries = (await res.json()).entries || [];
+      } catch (e) {
+        return;
+      }
+
+      rawEvents = rawEvents.filter(ev => !(ev.docs || []).some(d => d.id === saved.id)).concat(entries);
+      const openId = activeRecord ? activeRecord.id : null;
+      parseRecords();
+      applyFilters();
+
+      const fresh = archiveItems.find(i => i.id === openId);
+      if (fresh) {
+        // Keep showing the scan being edited, even if a cluster leads with another.
+        if (editDoc && (fresh.docs || []).some(d => d.id === editDoc.id)) fresh.primaryDoc = editDoc;
+        activeRecord = fresh;
+        if (inspectionDialog.open) modalH2.textContent = fresh.title;
+      } else if (openId !== null && inspectionDialog.open) {
+        showToast("Undated now: it sits outside the timeline until it has a date again.");
+      }
+    }
+
+    // Keyboard Shortcuts
+    window.addEventListener("keydown", (e) => {
+      const typing = ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement && document.activeElement.tagName);
+      if (inspectionDialog.open) {
+        if (typing) return;       // arrows, + and - belong to the text being edited
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          stepModal(-1);
+        } else if (e.key === "ArrowRight") {
+          e.preventDefault();
+          stepModal(1);
+        } else if (e.key === "+" || e.key === "=") {
+          zoomScanTo(zoomScale * 1.25, undefined, undefined, true);
+        } else if (e.key === "-") {
+          zoomScanTo(zoomScale / 1.25, undefined, undefined, true);
+        } else if (e.key === "0") {
+          fitScan("contain", true);
+        } else if (e.key === "[" || e.key === "]") {
+          showPage(activePage + (e.key === "]" ? 1 : -1));
+        }
+      } else {
+        if (e.key === "/" && document.activeElement !== searchInput) {
+          e.preventDefault();
+          searchInput.focus();
+        }
+      }
+    });
+
+    // =========================================================================
+    // SEARCH & FILTERING CONTROLLER
+    // =========================================================================
+    const searchInput = document.getElementById("timeline-search-input");
+    const searchClearBtn = document.getElementById("search-clear-btn");
+    const filterPerson = document.getElementById("filter-person");
+    const filterCategory = document.getElementById("filter-category");
+
+    function populateFilters() {
+      rawPeople.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = String(p.id);
+        opt.textContent = `${p.first_name} ${p.last_name}`;
+        filterPerson.appendChild(opt);
+      });
+
+      const categories = [...new Set(archiveItems.map(i => i.category).filter(Boolean))];
+      categories.forEach(cat => {
+        const opt = document.createElement("option");
+        opt.value = cat;
+        opt.textContent = cat.toUpperCase();
+        filterCategory.appendChild(opt);
+      });
+    }
+
+    function applyFilters() {
+      const q = normalizeSearchKey(searchInput.value.trim());
+      const selectedPerson = filterPerson.value;
+      const selectedCategory = filterCategory.value;
+
+      searchClearBtn.style.display = q ? "block" : "none";
+
+      const filtered = archiveItems.filter(item => {
+        if (selectedPerson !== "all") {
+          const match = (item.people || []).some(p => String(p.id) === selectedPerson);
+          if (!match) return false;
+        }
+
+        if (selectedCategory !== "all") {
+          if (item.category !== selectedCategory) return false;
+        }
+
+        if (q) {
+          const t = normalizeSearchKey(item.title);
+          const d = normalizeSearchKey(item.description);
+          const l = normalizeSearchKey(item.location);
+          const p = (item.people || []).map(x => normalizeSearchKey(x.name)).join(" ");
+          const c = normalizeSearchKey(item.primaryDoc?.transcription || "");
+          const combined = `${t} ${d} ${l} ${p} ${c}`;
+          if (!combined.includes(q)) return false;
+        }
+
+        return true;
+      });
+
+      filteredItems = filtered;
+
+      const matchingYears = [...new Set(filtered.map(i => i.year).filter(Boolean))].sort((a, b) => a - b);
+      renderYears(matchingYears);
+
+      if (matchingYears.length > 0) {
+        if (!currentSelectedYear || !matchingYears.includes(currentSelectedYear)) {
+          currentSelectedYear = matchingYears[0];
+        }
+        renderMonths(currentSelectedYear);
+      } else {
+        renderMonths(null);
+      }
+
+      renderDays(filtered);
+
+      const statusEl = document.getElementById("days-filter-status");
+      if (q || selectedPerson !== "all" || selectedCategory !== "all") {
+        statusEl.textContent = `Filtered: ${filtered.length} of ${archiveItems.length} records`;
+      } else {
+        statusEl.textContent = "";
+      }
+    }
+
+    searchInput.addEventListener("input", applyFilters);
+    searchClearBtn.addEventListener("click", () => {
+      searchInput.value = "";
+      applyFilters();
+      searchInput.focus();
+    });
+
+    filterPerson.addEventListener("change", applyFilters);
+    filterCategory.addEventListener("change", applyFilters);
+
+    // =========================================================================
+    // INITIALIZATION
+    // =========================================================================
+    document.addEventListener("DOMContentLoaded", () => {
+      try {
+        parseRecords();
+        populateFilters();
+        renderYears();
+
+        if (distinctYears.length > 0) {
+          currentSelectedYear = distinctYears[0];
+          renderMonths(currentSelectedYear);
+          selectYear(currentSelectedYear, false);
+        }
+
+        filteredItems = [...archiveItems];
+        renderDays(archiveItems);
+      } catch (err) {
+        showFatal("Failed to initialize timeline interface.", err);
+      }
+    });
+
+  </script>
+</body>
+</html>

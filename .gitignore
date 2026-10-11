@@ -1,0 +1,34 @@
+# Personal and runtime data
+/data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Distribution and build artifacts
+/dist/
+/build/
+*.egg-info/
+*.egg
+
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Testing and coverage
+/.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment and secrets
+.env
+*.env
+
+# Operating System and IDEs
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+/.agents
+/.claude

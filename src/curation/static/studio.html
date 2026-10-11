@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Historical Family Archive</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/studio.css?v=20260924_4">
+</head>
+<body>
+  <!-- Top Navigation Header -->
+  <header class="dashboard-header">
+    <div class="header-left">
+      <button id="btn-sidebar-toggle" class="btn-sidebar-toggle" title="Toggle Navigation Sidebar (Alt + S)">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+      </button>
+      <div class="brand">
+        <span class="brand-badge">ARCHIVE ENGINE</span>
+        <h1>Dashboard</h1>
+      </div>
+    </div>
+    <div class="header-right">
+      <span id="header-stats" class="header-stats">Loading archive...</span>
+      <!-- The whole archive as one file: every scan, every record, and where
+           you are. Opening one lands you back on this exact view. -->
+      <div class="archive-file-actions">
+        <button type="button" id="btn-open-archive" class="btn btn-secondary btn-sm"
+                title="Open a saved .archivesys file — you land exactly where it was saved">Open archive…</button>
+        <button type="button" id="btn-save-archive" class="btn btn-secondary btn-sm"
+                title="Save every scan, every record and where you are into one .archivesys file">Save archive</button>
+      </div>
+      <input type="file" id="archive-file-input" accept=".archivesys" hidden>
+    </div>
+  </header>
+
+  <!-- App Workspace (Sidebar + Dynamic View Container) -->
+  <div class="app-body">
+    <!-- Primary Navigation Sidebar -->
+    <aside class="app-sidebar" id="app-sidebar">
+      <div class="sidebar-nav-list">
+        <button class="nav-item active" id="nav-explorer" data-view="view-explorer">
+          <div class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+          <div class="nav-text">
+            <span class="nav-title">Scan Explorer</span>
+            <span class="nav-sub">Browse computer files</span>
+          </div>
+        </button>
+
+        <button class="nav-item" id="nav-database" data-view="view-database">
+          <div class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></div>
+          <div class="nav-text">
+            <span class="nav-title">Indexed Archive</span>
+            <span class="nav-sub">Catalog & previews</span>
+          </div>
+          <span class="nav-badge" id="nav-db-count">0</span>
+        </button>
+
+        <button class="nav-item" id="nav-curation" data-view="view-curation">
+          <div class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg></div>
+          <div class="nav-text">
+            <span class="nav-title">Curation Studio</span>
+            <span class="nav-sub" id="nav-active-doc-sub">No document loaded</span>
+          </div>
+        </button>
+
+        <button class="nav-item" id="nav-people" data-view="view-people">
+          <div class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div class="nav-text">
+            <span class="nav-title">People</span>
+            <span class="nav-sub" id="nav-people-count">Everyone in the archive</span>
+          </div>
+        </button>
+
+        <button class="nav-item" id="nav-timeline" data-view="view-timeline">
+          <div class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18"/><circle cx="8" cy="12" r="2.4"/><circle cx="16" cy="12" r="2.4"/><path d="M5 7v10M19 7v10"/></svg></div>
+          <div class="nav-text">
+            <span class="nav-title">Timeline Preview</span>
+            <span class="nav-sub">Interactive canvas</span>
+          </div>
+        </button>
+
+        <button class="nav-item" id="nav-settings" data-view="view-settings">
+          <div class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+          <div class="nav-text">
+            <span class="nav-title">Settings</span>
+            <span class="nav-sub">OCR tuning &amp; bench</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Fills the empty lower sidebar: a persistent, non-blocking view of what
+           the OCR engine is doing, replacing the blocking progress modal. -->
+      <div class="activity-panel" id="activity-panel" hidden>
+        <div class="activity-head">
+          <span class="activity-title">Activity</span>
+          <button type="button" class="btn-link-action" id="btn-cancel-all-jobs">Stop all</button>
+        </div>
+
+        <div class="activity-current" id="activity-current" hidden>
+          <div class="activity-row">
+            <span class="activity-file" id="activity-file">—</span>
+            <span class="activity-elapsed" id="activity-elapsed"></span>
+          </div>
+          <div class="activity-progress">
+            <div class="activity-progress-fill" id="activity-progress-fill"></div>
+          </div>
+          <div class="activity-row">
+            <span class="activity-stage" id="activity-stage">Working…</span>
+            <button type="button" class="btn-icon-cancel" id="btn-cancel-active" title="Cancel this job">&times;</button>
+          </div>
+        </div>
+
+        <div class="activity-queued" id="activity-queued" hidden></div>
+        <ul class="activity-recent" id="activity-recent"></ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-status-pill">
+          <span class="status-indicator-dot"></span>
+          <span id="system-status-text">Engine Online</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Dynamic Content Views -->
+    <main class="app-content">
+
+      <!-- =================================================================== -->
+      <!-- VIEW 1: Filesystem Scan Explorer                                    -->
+      <!-- =================================================================== -->
+      <section class="studio-view active" id="view-explorer">
+        <div class="view-header">
+          <div class="view-title-row">
+            <h2>Local Scan Explorer</h2>
+            <span class="view-desc">Browse directories on your computer to import, OCR, and catalogue scans</span>
+          </div>
+
+          <!-- Quick Bookmarks -->
+          <div class="bookmarks-row" id="quick-bookmarks">
+            <span class="bookmarks-label">Quick Jump:</span>
+            <!-- Populated dynamically -->
+          </div>
+
+          <!-- Breadcrumbs Bar -->
+          <div class="breadcrumb-bar">
+            <button id="btn-fs-up" class="btn btn-secondary btn-sm" title="Go up to parent directory">&uarr; Parent</button>
+            <div class="breadcrumbs" id="fs-breadcrumbs">
+              <!-- Breadcrumbs rendered dynamically -->
+            </div>
+            <div class="breadcrumb-jump">
+              <input type="text" id="fs-path-input" placeholder="Jump to path...">
+              <button id="btn-fs-go" class="btn btn-primary btn-sm">Go</button>
+              <button id="btn-fs-refresh" class="btn btn-secondary btn-sm" title="Refresh directory">Refresh</button>
+            </div>
+          </div>
+
+          <!-- Explorer Filter & Search Toolbar (prominent top position) -->
+          <div class="explorer-filter-bar">
+            <div class="explorer-search-box">
+              <input type="text" id="fs-search-input" placeholder="Search scans and documents in this folder..." autocomplete="off">
+              <button type="button" id="btn-fs-clear-search" class="btn-clear" title="Clear search">&times;</button>
+            </div>
+            <div class="explorer-filter-pills" id="fs-status-pills">
+              <button type="button" class="pill active" id="fs-filter-all" data-filter="all">All</button>
+              <button type="button" class="pill" id="fs-filter-unindexed" data-filter="unindexed">Unindexed</button>
+              <button type="button" class="pill" id="fs-filter-indexed" data-filter="indexed">Indexed</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="explorer-body">
+          <!-- Subdirectories Section -->
+          <div class="explorer-section">
+            <h3 class="section-title">Folders</h3>
+            <div class="directory-grid" id="fs-directories">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Scan Files Section -->
+          <div class="explorer-section">
+            <div class="section-title-row">
+              <h3 class="section-title">Discovered Scans &amp; Documents</h3>
+              <div class="section-title-actions">
+                <button type="button" class="btn-link-action" id="btn-select-all">Select all</button>
+                <span id="fs-files-count" class="counter-label">0 scans</span>
+                <!-- Every scan in the folder, not only the cards loaded so far:
+                     checked first, then added and sorted in the background. -->
+                <button type="button" class="btn btn-primary btn-sm" id="btn-import-folder">Add this folder&hellip;</button>
+              </div>
+            </div>
+
+            <!-- Appears only once something is selected, so the default view stays quiet -->
+            <div class="selection-bar" id="selection-bar" hidden>
+              <div class="selection-bar-left">
+                <span class="selection-count" id="selection-count">0 selected</span>
+                <button type="button" class="btn-link-action" id="btn-clear-selection">Clear</button>
+              </div>
+              <div class="selection-bar-right">
+                <span class="selection-hint">Shift-click cards to select a range</span>
+                <button type="button" class="btn btn-primary btn-sm" id="btn-ingest-selected">
+                  Index selected
+                </button>
+              </div>
+            </div>
+            <div class="files-grid" id="fs-files">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- VIEW 2: Indexed Database Catalog                                    -->
+      <!-- =================================================================== -->
+      <!-- =================================================================== -->
+      <!-- VIEW: People                                                        -->
+      <!-- =================================================================== -->
+      <section class="studio-view" id="view-people">
+        <div class="view-header">
+          <div class="view-title-row">
+            <h2>People</h2>
+            <span class="view-desc">Everyone the archive knows about, and what it holds on them</span>
+          </div>
+
+          <div class="catalog-toolbar">
+            <div class="catalog-search-box">
+              <input type="text" id="people-search" placeholder="Search people..." autocomplete="off">
+              <button id="btn-people-clear-search" class="btn-clear" title="Clear search">&times;</button>
+            </div>
+            <div class="people-sort">
+              <label class="filter-group-label" for="people-sort-select">Sort</label>
+              <select id="people-sort-select" class="select-input">
+                <option value="name">By name</option>
+                <option value="documents">Most documented</option>
+                <option value="earliest">Earliest in the archive</option>
+                <option value="lifespan">By lifespan</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Raised only when the archive actually has likely duplicates.
+               A view that shows you a problem it gives you no way to fix is
+               worse than no view, so the banner opens the merge tool. -->
+          <div class="duplicate-banner" id="duplicate-banner" hidden>
+            <span class="duplicate-banner-text" id="duplicate-banner-text"></span>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-review-duplicates">Review</button>
+            <button type="button" class="btn-clear" id="btn-dismiss-duplicates" title="Dismiss">&times;</button>
+          </div>
+        </div>
+
+        <div class="people-body">
+          <div class="people-grid" id="people-grid"></div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- VIEW: One person                                                    -->
+      <!-- =================================================================== -->
+      <section class="studio-view" id="view-person">
+        <div class="view-header person-header">
+          <button type="button" class="btn-link-action" id="btn-back-to-people">&larr; All people</button>
+          <div class="person-headline">
+            <div class="person-portrait-large" id="person-portrait"></div>
+            <div class="person-headline-text">
+              <h2 id="person-name">&nbsp;</h2>
+              <span class="view-desc" id="person-lifespan"></span>
+              <div class="person-role-summary" id="person-roles"></div>
+              <p class="person-notes" id="person-notes" hidden></p>
+            </div>
+            <!-- Everything a person record can need correcting lives here: a
+                 misspelt name, a wrong date, a duplicate, or someone who should
+                 not be in the archive at all. -->
+            <div class="person-headline-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-person-edit">Edit&hellip;</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-person-portrait">Picture&hellip;</button>
+              <div class="overflow-menu">
+                <button type="button" class="btn-overflow" id="btn-person-overflow" aria-haspopup="true" aria-expanded="false" title="More actions">&#8943;</button>
+                <div class="overflow-sheet opens-down" id="person-overflow-sheet" hidden>
+                  <button type="button" id="btn-person-merge">Same person as&hellip;</button>
+                  <button type="button" id="btn-person-delete" class="danger">Delete person&hellip;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="people-body">
+          <div class="database-grid" id="person-documents"></div>
+        </div>
+      </section>
+
+      <section class="studio-view" id="view-database">
+        <div class="view-header">
+          <div class="view-title-row">
+            <h2>Indexed Document Archive</h2>
+            <span class="view-desc">Search, filter, and inspect all records catalogued in SQLite</span>
+          </div>
+
+          <!-- Catalog Toolbar -->
+          <div class="catalog-toolbar">
+            <div class="catalog-search-box">
+              <input type="text" id="db-search" placeholder="Search archive..." autocomplete="off">
+              <button id="btn-db-clear-search" class="btn-clear" title="Clear search">&times;</button>
+            </div>
+
+            <!-- View Switcher -->
+            <div class="view-mode-toggle">
+              <button id="btn-mode-grid" class="btn-tool active" title="Visual Previews Grid">Grid</button>
+              <button id="btn-mode-list" class="btn-tool" title="Detailed Data Table">List</button>
+            </div>
+          </div>
+
+          <!-- Raised only while some items are still one record per page:
+               "14600", "14600 1", "14600 2" scanned before pages were kept
+               together. Gone once there is nothing left to combine. -->
+          <div class="duplicate-banner" id="pages-banner" hidden>
+            <span class="duplicate-banner-text" id="pages-banner-text"></span>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-review-pages">Review</button>
+            <button type="button" class="btn-clear" id="btn-dismiss-pages" title="Dismiss">&times;</button>
+          </div>
+
+          <!-- Two filter axes, matching the two the record itself has. -->
+          <div class="catalog-filters">
+            <div class="filter-group">
+              <span class="filter-group-label">Review</span>
+              <div class="pills-row" id="db-review-pills">
+                <button class="pill active" data-review="all">All</button>
+                <button class="pill" data-review="todo">To review</button>
+                <button class="pill" data-review="done">Reviewed</button>
+              </div>
+            </div>
+
+            <div class="filter-group">
+              <span class="filter-group-label">Kind</span>
+              <div class="pills-row" id="db-kind-pills">
+                <button class="pill active" data-kind="all">All</button>
+                <!-- Rendered from /api/kinds -->
+              </div>
+            </div>
+
+            <!-- People are many-to-many with documents, so grouping by person
+                 shows a document under each person it involves. That repetition
+                 is the point: the question is "what do we have about them". -->
+            <div class="filter-group">
+              <span class="filter-group-label">Group</span>
+              <div class="pills-row" id="db-group-pills">
+                <button class="pill active" data-group="none">Flat</button>
+                <button class="pill" data-group="person">By person</button>
+                <button class="pill" data-group="kind">By kind</button>
+                <button class="pill" data-group="decade">By decade</button>
+              </div>
+            </div>
+
+            <div class="filter-group" id="db-person-filter-group">
+              <span class="filter-group-label">Who</span>
+              <div class="person-filter" id="db-person-filter">
+                <select id="db-person-select" class="select-input">
+                  <option value="">Anyone</option>
+                </select>
+                <div class="person-filter-chips" id="db-person-chips"></div>
+                <div class="person-match-toggle" id="db-person-match" hidden>
+                  <button type="button" class="match-opt active" data-match="any">any of</button>
+                  <button type="button" class="match-opt" data-match="all">all of</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="database-body">
+          <!-- Visual Grid Mode -->
+          <div class="database-grid" id="db-grid-container">
+            <!-- Rendered dynamically -->
+          </div>
+
+          <!-- Detailed Table List Mode -->
+          <div class="database-table-container" id="db-table-container" style="display: none;">
+            <table class="data-table" id="db-data-table">
+              <thead>
+                <tr>
+                  <th style="width: 50px;">ID</th>
+                  <th style="width: 60px;">Scan</th>
+                  <th>Title / File Name</th>
+                  <th style="width: 120px;">When</th>
+                  <th style="width: 110px;">Kind</th>
+                  <th style="width: 80px;">Language</th>
+                  <th style="width: 110px;">Review</th>
+                  <th style="width: 44px; text-align: center;"></th>
+                </tr>
+              </thead>
+              <tbody id="db-table-body">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- VIEW 3: Document Curation Studio                                    -->
+      <!-- =================================================================== -->
+      <section class="studio-view" id="view-curation">
+        <div class="curation-layout">
+          <!-- Left Column: Scan Inspection & Panzoom -->
+          <div class="curation-viewer-pane">
+            <div class="viewer-toolbar">
+              <div class="zoom-controls">
+                <button id="zoom-out" class="btn-tool" title="Zoom out (-)">Zoom -</button>
+                <span id="zoom-level-badge" class="zoom-level-badge" title="Current zoom level">100%</span>
+                <button id="zoom-in" class="btn-tool" title="Zoom in (+)">Zoom +</button>
+                <button id="zoom-fit-page" class="btn-tool" title="Fit whole page in view">Fit Page</button>
+                <button id="zoom-fit-width" class="btn-tool" title="Fit to width (scroll to read)">Fit Width</button>
+                <button id="zoom-reset" class="btn-tool" title="Actual size (100%)">100%</button>
+              </div>
+              <div class="filter-controls">
+                <span class="filter-label">Filter:</span>
+                <button id="filter-raw" class="btn-tool active">Raw</button>
+                <button id="filter-contrast" class="btn-tool">High Contrast</button>
+                <button id="filter-invert" class="btn-tool">Invert</button>
+              </div>
+            </div>
+
+            <div class="viewport" id="viewport">
+              <div class="panzoom-container" id="panzoom-container">
+                <img id="scan-image" src="" alt="Archival Scan" draggable="false">
+              </div>
+              <div class="viewport-overlay" id="viewport-empty">Select or load a document</div>
+              <div class="viewport-hint" id="viewport-hint">Scroll to move &bull; Click to zoom</div>
+            </div>
+
+            <!-- Only for an item scanned as several files: its pages, in order. -->
+            <div class="page-strip" id="page-strip" hidden aria-label="Pages of this item"></div>
+
+            <div class="viewer-footer">
+              <div class="viewer-footer-left">
+                <button id="btn-prev-doc" class="btn-nav-doc" title="Previous document (Alt + Left)">&lt; Prev</button>
+                <span id="doc-counter-label" class="doc-counter">Doc 0 / 0</span>
+                <button id="btn-next-doc" class="btn-nav-doc" title="Next document (Alt + Right)">Next &gt;</button>
+              </div>
+              <span id="file-path-display" class="file-path">No file loaded</span>
+              <span id="dimensions-display" class="dimensions"></span>
+            </div>
+          </div>
+
+          <!-- Draggable Split Divider -->
+          <div class="curation-resizer" id="curation-resizer" role="separator" aria-orientation="vertical" title="Drag to resize panels (Double-click to reset)"></div>
+
+          <!-- Right Column: the record.
+               One scrolling column, three sections, in the order a curator
+               actually works: what it is, who is in it, what it says. v1 split
+               these across three tabs, which hid two thirds of the record and
+               forced the date widget to exist twice. -->
+          <div class="curation-editor-pane">
+            <div class="record-head">
+              <div class="record-head-line">
+                <h2 class="record-title" id="record-title">No document loaded</h2>
+                <span class="review-mark" id="review-mark" hidden>Reviewed</span>
+              </div>
+              <nav class="record-jump" id="record-jump" aria-label="Jump to section">
+                <button type="button" class="jump-link is-current" data-target="sec-identity">What it is</button>
+                <button type="button" class="jump-link" data-target="sec-people">Who's in it</button>
+                <button type="button" class="jump-link" data-target="sec-text">What it says</button>
+              </nav>
+            </div>
+
+            <div class="record-scroll" id="record-scroll">
+
+              <!-- ===== 1. What it is ================================= -->
+              <section class="record-section" id="sec-identity">
+                <h3 class="section-title">
+                  <span class="section-title-text">What it is</span>
+                  <span class="section-title-meta" id="identity-meta"></span>
+                </h3>
+
+                <div class="field">
+                  <label class="field-label" for="doc-title">Title</label>
+                  <input type="text" id="doc-title" class="text-input title-input"
+                         placeholder="What would you call this in a family album?">
+                </div>
+
+                <div class="field">
+                  <span class="field-label">Kind</span>
+                  <div class="kind-chips" id="kind-chips" role="radiogroup" aria-label="Document kind">
+                    <!-- Rendered from /api/kinds: the vocabulary lives in one place -->
+                  </div>
+                  <p class="field-note" id="kind-note"></p>
+                  <p class="field-note kind-sorted" id="kind-sorted" hidden></p>
+                </div>
+
+                <!-- One date control. It reads what a historian would actually
+                     write -- "May 1923", "c. 1912", "1920s", "1912-1915" -- and
+                     shows its reading back. v1 spent six controls on this and
+                     then needed a second copy of all six for the event. -->
+                <div class="field">
+                  <label class="field-label" for="doc-date">When</label>
+                  <div class="date-field">
+                    <input type="text" id="doc-date" class="text-input date-input"
+                           placeholder="1923 · May 1923 · 14 May 1923 · c. 1912 · 1920s · 1912–1915"
+                           autocomplete="off" spellcheck="false">
+                    <div class="date-reading" id="date-reading" aria-live="polite">
+                      <span class="date-reading-empty">Undated — it will sit outside the timeline until you give it a date.</span>
+                    </div>
+                    <!-- Dates the page states about itself, read off its own
+                         text. Arabic numerals survive every language here, so
+                         a year is findable even where the words are not. -->
+                    <div class="date-found" id="date-found" hidden>
+                      <span class="date-found-label">Found on the page</span>
+                      <div class="date-found-list" id="date-found-list"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label class="field-label" for="doc-location">Where</label>
+                  <input type="text" id="doc-location" class="text-input" placeholder="Athens · Smyrna · Ellis Island">
+                </div>
+
+                <div class="field">
+                  <label class="field-label" for="doc-summary">In a sentence</label>
+                  <textarea id="doc-summary" class="textarea-input" rows="2"
+                            placeholder="What happened here? This is the line that shows on the timeline card."></textarea>
+                </div>
+
+                <div class="field">
+                  <label class="field-label" for="tags-entry">Subjects</label>
+                  <div class="tag-field" id="tag-field">
+                    <input type="text" id="tags-entry" class="tag-entry"
+                           placeholder="migration, military, wartime…" autocomplete="off"
+                           list="tag-suggestions">
+                  </div>
+                  <datalist id="tag-suggestions"></datalist>
+                  <p class="field-note">Enter to add. Subjects group the timeline; the kind above only decides how it is read.</p>
+                </div>
+
+                <details class="field-more">
+                  <summary>Provenance</summary>
+                  <div class="field">
+                    <label class="field-label" for="doc-creator">Creator or issuing authority</label>
+                    <input type="text" id="doc-creator" class="text-input" placeholder="Registry office, photographer, consulate…">
+                  </div>
+                  <div class="field">
+                    <label class="field-label" for="doc-notes">Archival notes</label>
+                    <textarea id="doc-notes" class="textarea-input" rows="3"
+                              placeholder="Condition, how it came to you, anything not meant for the published timeline."></textarea>
+                  </div>
+                </details>
+              </section>
+
+              <!-- ===== 2. Who's in it =============================== -->
+              <section class="record-section" id="sec-people">
+                <h3 class="section-title">
+                  <span class="section-title-text">Who's in it</span>
+                  <span class="section-title-meta" id="people-meta"></span>
+                </h3>
+
+                <div class="people-list" id="people-list"></div>
+
+                <div class="people-add">
+                  <select id="person-picker" class="select-input">
+                    <option value="">Add a person…</option>
+                  </select>
+                  <select id="person-role" class="select-input person-role">
+                    <option value="subject">Subject</option>
+                    <option value="author">Author / sender</option>
+                    <option value="recipient">Recipient</option>
+                    <option value="witness">Witness</option>
+                    <option value="photographer">Photographer</option>
+                  </select>
+                  <button type="button" id="btn-link-person" class="btn btn-outline btn-sm">Link</button>
+                  <button type="button" id="btn-new-person" class="btn-link-action">New person</button>
+                </div>
+              </section>
+
+              <!-- ===== 3. What it says ============================== -->
+              <section class="record-section" id="sec-text">
+                <h3 class="section-title">
+                  <span class="section-title-text" id="text-heading">What it says</span>
+                  <span class="section-title-meta" id="text-meta"></span>
+                  <button type="button" id="btn-run-ocr-all" class="btn-link-action" hidden>Read all pages</button>
+                  <button type="button" id="btn-run-ocr" class="btn btn-secondary btn-sm">Read the page</button>
+                </h3>
+
+                <p class="section-note" id="text-note" hidden></p>
+
+                <div class="field">
+                  <label class="field-label" for="language-select">Language</label>
+                  <select id="language-select" class="select-input">
+                    <option value="el-poly">Polytonic Greek (Katharevousa)</option>
+                    <option value="el">Modern Greek (Dimotiki)</option>
+                    <option value="fr">French</option>
+                    <option value="en">English</option>
+                    <option value="mixed">Detect automatically</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <div class="field-label-row">
+                    <label class="field-label" for="transcription-text">Transcription</label>
+                    <span class="field-note" id="transcription-stats">0 characters</span>
+                  </div>
+                  <div class="diacritic-palette" id="diacritic-palette" aria-label="Polytonic characters">
+                    <button type="button" class="btn-diacritic" data-char="ᾷ">ᾷ</button>
+                    <button type="button" class="btn-diacritic" data-char="ᾤ">ᾤ</button>
+                    <button type="button" class="btn-diacritic" data-char="ῄ">ῄ</button>
+                    <button type="button" class="btn-diacritic" data-char="Ὦ">Ὦ</button>
+                    <button type="button" class="btn-diacritic" data-char="῾">῾</button>
+                    <button type="button" class="btn-diacritic" data-char="᾿">᾿</button>
+                    <button type="button" class="btn-diacritic" data-char="῀">῀</button>
+                    <button type="button" class="btn-diacritic" data-char="ϛ">ϛ</button>
+                    <button type="button" class="btn-diacritic" data-char="·">·</button>
+                    <button type="button" class="btn-diacritic" data-char=";">;</button>
+                  </div>
+                  <textarea id="transcription-text" class="textarea-transcription" rows="12"
+                            placeholder="Type what the page says, exactly as it says it."></textarea>
+                </div>
+              </section>
+
+              <!-- The projection readout. Not a control, a consequence: it
+                   states where this record stands on the timeline given what
+                   was typed above. v1 asked the curator to fill a second copy
+                   of the same fields behind a toggle. -->
+              <section class="record-section projection-readout" id="sec-projection">
+                <h3 class="section-title is-plain">
+                  <span class="section-title-text">Where it lands</span>
+                </h3>
+                <div class="projection-line" id="projection-line">
+                  <span class="projection-dot"></span>
+                  <span class="projection-text" id="projection-text">Undated — not on the timeline</span>
+                </div>
+                <label class="exclude-control">
+                  <input type="checkbox" id="doc-excluded">
+                  <span>Keep this out of the timeline</span>
+                </label>
+                <p class="field-note" id="exclude-note">Stays in the archive and stays searchable. Use it for duplicates, blank versos and unreadable scans.</p>
+              </section>
+            </div>
+
+            <!-- Two controls. A passive one and the only button that ends the job. -->
+            <div class="record-actions">
+              <div class="save-state" id="save-state">
+                <span class="save-dot"></span>
+                <span id="save-text">Ready</span>
+              </div>
+              <div class="record-actions-right">
+                <div class="overflow-menu">
+                  <button type="button" class="btn-overflow" id="btn-overflow" aria-haspopup="true" aria-expanded="false" title="More actions">&#8943;</button>
+                  <div class="overflow-sheet" id="overflow-sheet" hidden>
+                    <button type="button" id="btn-reopen">Mark as not reviewed</button>
+                    <button type="button" id="btn-split-page" hidden>Make this page a separate record</button>
+                    <button type="button" id="btn-delete-doc" class="danger">Delete from archive…</button>
+                  </div>
+                </div>
+                <button type="button" id="btn-done" class="btn btn-primary">Done <kbd>⌘↵</kbd></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- VIEW 5: Pipeline Settings & OCR Tuning Bench                        -->
+      <!-- =================================================================== -->
+      <section class="studio-view" id="view-settings">
+        <div class="view-header">
+          <div class="view-title-row">
+            <h2>Transcription Settings</h2>
+            <span class="view-desc">Tune the OCR pipeline, then measure the change on a real scan before committing to it</span>
+          </div>
+        </div>
+
+        <div class="settings-body">
+          <div class="settings-columns">
+
+            <!-- ---------- Column: the knobs ---------- -->
+            <div class="settings-col">
+              <div class="editor-card">
+                <div class="card-title-row">
+                  <h3>Recognition Models</h3>
+                </div>
+
+                <div class="form-group">
+                  <label for="set-model-set">Model set</label>
+                  <select id="set-model-set" class="select-input"></select>
+                  <span class="field-hint" id="hint-model-set">Which tessdata directory the engine loads from.</span>
+                </div>
+
+                <div class="form-group">
+                  <label for="set-default-lang">Default language routing</label>
+                  <select id="set-default-lang" class="select-input">
+                    <option value="el-poly">Polytonic Greek (Katharevousa) — grc+ell</option>
+                    <option value="el">Modern Greek (Dimotiki) — ell+grc</option>
+                    <option value="fr">French — fra</option>
+                    <option value="en">English — eng</option>
+                  </select>
+                  <span class="field-hint">Latin packs are kept out of the Greek routes: sharing a language
+                    string with <code>eng</code>/<code>fra</code> makes Tesseract emit Latin capitals inside
+                    Greek words.</span>
+                </div>
+              </div>
+
+              <div class="editor-card">
+                <div class="card-title-row">
+                  <h3>Image Preparation</h3>
+                </div>
+
+                <div class="form-group">
+                  <label for="set-ocr-input">Image handed to the engine</label>
+                  <select id="set-ocr-input" class="select-input"></select>
+                  <span class="field-hint" id="hint-ocr-input"></span>
+                </div>
+
+                <div class="form-group">
+                  <div class="label-with-action">
+                    <label for="set-clahe">Contrast boost (CLAHE clip limit)</label>
+                    <output class="range-value" id="out-clahe">1.5</output>
+                  </div>
+                  <input type="range" id="set-clahe" class="range-input" min="0.5" max="6" step="0.1">
+                  <span class="field-hint">Higher lifts faded ink but also amplifies paper grain. Above ~2.5
+                    measured worse on faded typescript.</span>
+                </div>
+
+                <div class="form-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="set-deskew"><span>Correct page tilt (deskew)</span>
+                  </label>
+                </div>
+
+                <div class="form-group">
+                  <div class="label-with-action">
+                    <label for="set-deadband">Ignore tilt below (degrees)</label>
+                    <output class="range-value" id="out-deadband">1.5</output>
+                  </div>
+                  <input type="range" id="set-deadband" class="range-input" min="0" max="5" step="0.1">
+                  <span class="field-hint">Rotating costs sharpness. Below this angle the page is left alone.</span>
+                </div>
+              </div>
+
+              <div class="editor-card">
+                <div class="card-title-row">
+                  <h3>Second Pass</h3>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="set-refine">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <p class="setting-desc">Re-reads only the lines the first pass was unsure of, zoomed in and
+                  under several enhancements. Roughly 20x slower per page; keep it off for bulk ingest and on
+                  for final transcription.</p>
+
+                <div id="refine-fields">
+                  <div class="form-group">
+                    <div class="label-with-action">
+                      <label for="set-refine-threshold">Re-read lines below confidence</label>
+                      <output class="range-value" id="out-refine-threshold">82</output>
+                    </div>
+                    <input type="range" id="set-refine-threshold" class="range-input" min="0" max="100" step="1">
+                  </div>
+
+                  <div class="form-group">
+                    <div class="label-with-action">
+                      <label for="set-refine-margin">Only accept if it beats the first pass by</label>
+                      <output class="range-value" id="out-refine-margin">6</output>
+                    </div>
+                    <input type="range" id="set-refine-margin" class="range-input" min="0" max="30" step="1">
+                    <span class="field-hint">Confidence alone is not trustworthy — a hallucinated line can score
+                      higher than a correct one, so a retry must clear this margin as well as the plausibility
+                      guards.</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="editor-card">
+                <div class="card-title-row">
+                  <h3>Explorer</h3>
+                </div>
+                <div class="form-group">
+                  <div class="label-with-action">
+                    <label for="set-page-size">Scans loaded per page</label>
+                    <output class="range-value" id="out-page-size">60</output>
+                  </div>
+                  <input type="range" id="set-page-size" class="range-input" min="12" max="300" step="12">
+                  <span class="field-hint">Caps how many cards a large folder builds at once.</span>
+                </div>
+              </div>
+
+              <!-- Exports travel between people, so nothing is given up unless
+                   someone chooses to: smaller is an option, not the default. -->
+              <div class="editor-card">
+                <div class="card-title-row">
+                  <h3>Sharing &amp; Export</h3>
+                </div>
+                <div class="form-group">
+                  <label for="set-export-quality">Scans in an exported timeline</label>
+                  <select id="set-export-quality" class="select-input">
+                    <option value="original">Original &mdash; every scan exactly as scanned</option>
+                    <option value="high">High &mdash; full-resolution JPEG, much smaller</option>
+                    <option value="compact">Compact &mdash; 2400 px JPEG, a fraction of the size</option>
+                  </select>
+                  <span class="field-hint" id="hint-export-quality"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ---------- Column: the bench ---------- -->
+            <div class="settings-col">
+              <div class="editor-card bench-card">
+                <div class="card-title-row">
+                  <h3>Tuning Bench</h3>
+                  <span class="engine-badge" id="bench-status">Idle</span>
+                </div>
+                <p class="setting-desc">Run one scan through several settings at once and compare what each
+                  produced. This is the honest way to pick between model sets — the right answer differs by
+                  collection.</p>
+
+                <div class="form-group">
+                  <label for="bench-path">Scan to test</label>
+                  <div class="bench-path-row">
+                    <input type="text" id="bench-path" class="text-input" placeholder="/path/to/scan.png">
+                    <button type="button" class="btn btn-secondary btn-sm" id="btn-bench-use-current"
+                            title="Use the document currently open in the Curation Studio">Use current</button>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="bench-variants">Compare</label>
+                  <select id="bench-variants" class="select-input">
+                    <option value="current">Current settings only</option>
+                    <option value="models" selected>Standard vs Best model set</option>
+                    <option value="passes">Single pass vs two-pass</option>
+                    <option value="inputs">Grayscale vs binarized input</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <div class="label-with-action">
+                    <label for="bench-reference">Reference transcription (optional)</label>
+                    <span class="field-hint">enables error rate</span>
+                  </div>
+                  <textarea id="bench-reference" class="textarea-input" rows="3"
+                            placeholder="Paste a correct transcription of this scan to score character error rate"></textarea>
+                </div>
+
+                <button type="button" class="btn btn-primary" id="btn-run-bench">Run comparison</button>
+
+                <div class="bench-results" id="bench-results"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-actions-bar">
+            <button type="button" class="btn btn-secondary" id="btn-reset-settings">Restore defaults</button>
+            <div class="settings-actions-right">
+              <span id="settings-save-note" class="field-hint"></span>
+              <button type="button" class="btn btn-primary" id="btn-save-settings">Save settings</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- VIEW 4: Timeline Preview                                            -->
+      <!-- =================================================================== -->
+      <section class="studio-view" id="view-timeline">
+        <div class="view-header timeline-header">
+          <div class="view-title-row">
+            <h2>Timeline Preview</h2>
+            <span class="view-desc">The compiled dashboard exactly as it will publish</span>
+          </div>
+          <div class="timeline-toolbar">
+            <label class="export-quality-quick" title="How scans are written when the timeline is exported">
+              <span>Scans</span>
+              <select id="timeline-export-quality" class="select-input select-sm">
+                <option value="original">Original</option>
+                <option value="high">High</option>
+                <option value="compact">Compact</option>
+              </select>
+            </label>
+            <button id="btn-refresh-timeline-frame" class="btn btn-secondary btn-sm">Refresh</button>
+            <button id="btn-recompile-timeline" class="btn btn-primary btn-sm">Recompile Timeline</button>
+          </div>
+        </div>
+        <div class="timeline-frame-container">
+          <!-- Loaded when the view opens, not at startup: every load recompiles
+               the whole timeline, and a startup copy was always replaced the
+               moment the view opened anyway. -->
+          <iframe id="timeline-iframe" src="about:blank" title="Timeline Preview"></iframe>
+          <div class="timeline-loading" id="timeline-loading" hidden>
+            <span class="timeline-loading-text">Bringing the timeline up to date…</span>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Modal: Create New Person -->
+  <div class="modal-backdrop" id="modal-new-person" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Catalog New Person</h3>
+        <button type="button" class="btn-modal-close" id="btn-close-person-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="new-person-first">First Name *</label>
+            <input type="text" id="new-person-first" class="text-input" placeholder="First Name">
+          </div>
+          <div class="form-group">
+            <label for="new-person-last">Last Name *</label>
+            <input type="text" id="new-person-last" class="text-input" placeholder="Last Name">
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="new-person-birth">Born</label>
+            <input type="text" id="new-person-birth" class="text-input" placeholder="e.g. 1895, c. 1895" autocomplete="off">
+            <span class="lifespan-reading" id="new-person-birth-reading"></span>
+          </div>
+          <div class="form-group">
+            <label for="new-person-death">Died</label>
+            <input type="text" id="new-person-death" class="text-input" placeholder="e.g. May 1961" autocomplete="off">
+            <span class="lifespan-reading" id="new-person-death-reading"></span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="new-person-notes">Biographical Notes</label>
+          <textarea id="new-person-notes" class="textarea-input" rows="2" placeholder="Biographical notes"></textarea>
+        </div>
+        <p class="form-error" id="new-person-error" role="alert" hidden></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btn-cancel-person-modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btn-save-new-person">Create &amp; Link</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: correct a person. The same fields the new-person form asks for,
+       plus the maiden name, and dates read the way the record reads them. -->
+  <div class="modal-backdrop" id="modal-edit-person" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Edit person</h3>
+        <button type="button" class="btn-modal-close" id="btn-close-edit-person">&times;</button>
+      </div>
+      <form class="modal-body" id="form-edit-person" novalidate>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="edit-person-first">First name</label>
+            <input type="text" id="edit-person-first" class="text-input" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="edit-person-last">Last name</label>
+            <input type="text" id="edit-person-last" class="text-input" autocomplete="off">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="edit-person-maiden">Maiden name</label>
+          <input type="text" id="edit-person-maiden" class="text-input" autocomplete="off">
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label for="edit-person-birth">Born</label>
+            <input type="text" id="edit-person-birth" class="text-input" placeholder="e.g. 1895, c. 1895" autocomplete="off">
+            <span class="lifespan-reading" id="edit-person-birth-reading"></span>
+          </div>
+          <div class="form-group">
+            <label for="edit-person-death">Died</label>
+            <input type="text" id="edit-person-death" class="text-input" placeholder="e.g. May 1961" autocomplete="off">
+            <span class="lifespan-reading" id="edit-person-death-reading"></span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="edit-person-notes">Notes</label>
+          <textarea id="edit-person-notes" class="textarea-input" rows="3"></textarea>
+        </div>
+        <p class="form-error" id="edit-person-error" role="alert" hidden></p>
+      </form>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btn-cancel-edit-person">Cancel</button>
+        <button type="submit" form="form-edit-person" class="btn btn-primary" id="btn-save-edit-person">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: two records of one person that the duplicate check cannot see
+       (a transliteration, a misspelling). Pick the other, then keep one. -->
+  <div class="modal-backdrop" id="modal-merge-with" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="merge-with-title">Same person as&hellip;</h3>
+        <button type="button" class="btn-modal-close" id="btn-close-merge-with">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="field-note">For two records of one person. Choose the other record, then the one to keep: the other&rsquo;s documents, missing dates and picture move across to it, and the other is removed. This cannot be undone.</p>
+        <select id="merge-with-select" class="select-input"></select>
+        <div class="merge-people" id="merge-with-pair"></div>
+        <p class="form-error" id="merge-with-error" role="alert" hidden></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: choose a person's picture -->
+  <div class="modal-backdrop" id="modal-portrait" style="display: none;">
+    <div class="modal-card modal-wide">
+      <div class="modal-header">
+        <h3>Their picture</h3>
+        <button type="button" class="btn-modal-close" id="btn-close-portrait-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="field-note">The archive picks one on its own. Override it, or say there should be none &mdash; that choice is kept.</p>
+        <div class="portrait-options" id="portrait-options"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: merge people who are probably one person -->
+  <div class="modal-backdrop" id="modal-merge" style="display: none;">
+    <div class="modal-card modal-wide">
+      <div class="modal-header">
+        <h3>People who may be the same person</h3>
+        <button type="button" class="btn-modal-close" id="btn-close-merge-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="field-note">Keeping one folds the others into it: their documents, their dates and their picture move across. This cannot be undone.</p>
+        <div class="merge-groups" id="merge-groups"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: records that are pages of one item, by their file names -->
+  <div class="modal-backdrop" id="modal-pages" style="display: none;">
+    <div class="modal-card modal-wide import-card">
+      <div class="modal-header">
+        <h3>Combine pages</h3>
+        <button type="button" class="btn-modal-close" id="btn-close-pages">&times;</button>
+      </div>
+      <div class="modal-body" id="pages-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btn-pages-cancel">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btn-pages-combine">Combine</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wizard: add a whole folder. Three steps -- which folders, check the
+       files (copies are shown and left out unless ticked), then add them in
+       the background, sorted into documents and photographs. -->
+  <div class="modal-backdrop" id="modal-import" style="display: none;">
+    <div class="modal-card modal-wide import-card">
+      <div class="modal-header">
+        <h3 id="import-title">Add a folder</h3>
+        <button type="button" class="btn-modal-close" id="btn-close-import">&times;</button>
+      </div>
+      <ol class="import-steps" id="import-steps">
+        <li data-step="scope">Folders</li>
+        <li data-step="review">Check</li>
+        <li data-step="run">Add</li>
+      </ol>
+      <div class="modal-body" id="import-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btn-import-back" hidden>Back</button>
+        <button type="button" class="btn btn-secondary" id="btn-import-cancel">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btn-import-next">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: open a saved archive. One dialog, four moments: reading the
+       file, showing what it holds, opening it, or saying why it cannot. -->
+  <div class="modal-backdrop" id="modal-archive" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="archive-modal-title">Open archive</h3>
+        <button type="button" class="btn-modal-close" id="btn-close-archive-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="archive-status" id="archive-status"></p>
+        <div class="activity-progress" id="archive-progress" hidden>
+          <div class="activity-progress-fill" id="archive-progress-fill"></div>
+        </div>
+        <dl class="archive-summary" id="archive-summary" hidden></dl>
+        <p class="field-note" id="archive-note" hidden></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btn-archive-cancel">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btn-archive-confirm" hidden>Open archive</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="archive-toast" role="status" aria-live="polite" hidden>
+    <span class="toast-text" id="archive-toast-text"></span>
+    <button type="button" class="toast-close" id="btn-archive-toast-close" title="Dismiss">&times;</button>
+  </div>
+
+  <div class="drop-overlay" id="archive-drop-overlay" hidden>
+    <div class="drop-overlay-card">Drop an <strong>.archivesys</strong> file to open it</div>
+  </div>
+
+  <script src="/static/dates.js?v=20260924_4"></script>
+  <script src="/static/studio.js?v=20260924_4"></script>
+</body>
+</html>
